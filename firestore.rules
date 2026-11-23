@@ -1,0 +1,18 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Appli Prélèvements : un seul document par utilisateur,
+    // accessible uniquement par grazioso.julien@gmail.com (compte vérifié).
+    match /users/{uid} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == uid
+        && request.auth.token.email == 'grazioso.julien@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+    // Tout le reste est refusé.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

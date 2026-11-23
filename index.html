@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prélèvements · Compte commun</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf6ef; --panel:#fffdf9; --panel2:#f5ede2; --line:#eaded0; --text:#4a3b31; --muted:#a08f80;
+  --amber:#c47a5a; --amber2:#a95f42; --ju:#6b9395; --alex:#c98b8f; --both:#c9a06a;
+  --ok:#76966b; --bad:#b9564a; --r:18px;
+  --fh:'Cormorant Garamond',Georgia,serif; --fb:'Jost',system-ui,sans-serif;
+  --shadow:0 2px 4px rgba(120,90,60,.04),0 10px 30px -12px rgba(120,90,60,.18);
+}
+*{box-sizing:border-box}
+body{margin:0;color:var(--text);font-family:var(--fb);font-size:14.5px;font-weight:400;
+  background:
+    radial-gradient(1200px 500px at 100% -10%, rgba(201,160,106,.13), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(107,147,149,.10), transparent 60%),
+    var(--bg);
+  background-attachment:fixed;min-height:100vh}
+h1,h2,h3,.num{font-family:var(--fh);font-weight:600}
+.tab,.btn{font-family:var(--fb)}
+header{display:flex;align-items:center;gap:16px;padding:18px 28px;border-bottom:1px solid var(--line);background:rgba(255,253,249,.85);backdrop-filter:blur(8px);position:sticky;top:0;z-index:5;flex-wrap:wrap}
+header h1{margin:0;font-size:30px;letter-spacing:.3px;display:flex;align-items:center;gap:10px;font-weight:600}
+header h1 span{color:var(--amber);font-style:italic;font-weight:500}
+header h1 svg{flex:none}
+nav{display:flex;gap:4px;margin-left:16px;flex-wrap:wrap}
+.tab{background:none;border:1px solid transparent;color:var(--muted);padding:7px 16px;border-radius:30px;cursor:pointer;font-size:14px;font-weight:500;letter-spacing:.4px;transition:all .2s}
+.tab.on{color:#fff;background:var(--amber);box-shadow:0 4px 14px -4px rgba(196,122,90,.6)}
+.tab:not(.on):hover{color:var(--text);background:var(--panel2)}
+.spacer{flex:1}
+main{max-width:1180px;margin:0 auto;padding:30px 28px 60px}
+.btn{white-space:nowrap;background:var(--panel);color:var(--text);border:1px solid var(--line);padding:8px 16px;border-radius:30px;cursor:pointer;font-size:14px;font-weight:500;transition:all .2s}
+.btn:hover{border-color:var(--amber);color:var(--amber2)}
+.btn.primary{background:var(--amber);color:#fff;border-color:var(--amber)}
+.btn.primary:hover{background:var(--amber2);color:#fff}
+.btn.danger{color:var(--bad)}
+.btn.sm{padding:5px 12px;font-size:13px}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.monthnav{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+.monthnav h2{margin:0;font-size:36px;min-width:240px;text-align:center;text-transform:capitalize;font-style:italic;font-weight:500}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;margin-bottom:26px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+.kpi{position:relative;overflow:hidden}
+.kpi::after{content:"";position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:50%;opacity:.13}
+.kpi .lbl{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:2px}
+.kpi .num{font-size:38px;margin:2px 0 6px;line-height:1.1}
+.kpi::after{background:var(--c,var(--both))} .kpi.ju::after{background:var(--ju)} .kpi.alex::after{background:var(--alex)} .kpi.tot::after{background:var(--both)}
+.kpi.ju .lbl{color:var(--ju)} .kpi.alex .lbl{color:var(--alex)} .kpi.tot .lbl{color:var(--amber)}
+.kpi .sub{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin-top:5px}
+.kpi .sub b{color:var(--text);font-weight:500}
+.reste{margin-top:12px;padding:9px 12px;border-radius:12px;font-weight:500;display:flex;justify-content:space-between}
+.reste.due{background:#f8e7e2;color:var(--bad)}
+.reste.okk{background:#e9f0e3;color:var(--ok)}
+.cumul{font-size:12.5px;color:var(--muted);margin-top:10px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;color:var(--muted);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:1.4px;padding:10px 12px;border-bottom:1px solid var(--line)}
+td{padding:11px 12px;border-bottom:1px dashed var(--line)}
+td.r,th.r{text-align:right}
+td b{font-weight:500}
+tr.click{cursor:pointer} tr.click:hover td{background:#fbf5ec}
+tfoot td{font-weight:600;border-bottom:none;font-family:var(--fh);font-size:18px;border-top:1px solid var(--line)}
+.badge{display:inline-block;padding:3px 11px;border-radius:30px;font-size:12px;font-weight:500}
+.b-J{background:#e4eeee;color:#4f7678} .b-A{background:#f5e4e4;color:#a86a6f} .b-JA{background:#f4ead9;color:#9c7540}
+.st{font-size:11px;padding:2px 9px;border-radius:30px;border:1px solid var(--line);color:var(--muted);background:var(--panel)}
+.st.renego{color:#b07a2c;border-color:#e2c48f} .st.resil{color:var(--bad);border-color:#e3b0a8}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px}
+.pcard{cursor:pointer;transition:transform .2s,border-color .2s,box-shadow .2s;position:relative}
+.pcard:hover{border-color:var(--amber);transform:translateY(-2px);box-shadow:0 14px 34px -14px rgba(160,100,60,.35)}
+.pcard.fini{opacity:.5}
+.pcard h3{margin:0 0 2px;font-size:24px}
+.pcard .cat{color:var(--muted);font-size:12px;letter-spacing:.5px}
+.pcard .amt{font-family:var(--fh);font-size:30px;font-weight:600;margin:12px 0 8px}
+.pcard .amt small{font-family:var(--fb);font-size:12.5px;color:var(--muted);font-weight:400}
+.pcard .meta{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;gap:8px}
+.section-title{display:flex;align-items:center;justify-content:space-between;margin:26px 0 12px}
+.section-title h3{margin:0;font-size:24px;font-style:italic;font-weight:500}
+.empty{color:var(--muted);text-align:center;padding:34px;font-family:var(--fh);font-style:italic;font-size:18px}
+input,select,textarea{background:#fff;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:9px 12px;font:inherit;width:100%;transition:border-color .2s,box-shadow .2s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(196,122,90,.15)}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;letter-spacing:.3px}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fgrid .full{grid-column:1/-1}
+.seg{display:flex;border:1px solid var(--line);border-radius:30px;overflow:hidden;background:var(--panel);padding:3px;gap:3px}
+.seg button{flex:1;background:none;border:none;color:var(--muted);padding:7px 10px;cursor:pointer;font:500 13.5px var(--fb);border-radius:30px;transition:all .2s}
+.seg button:hover{color:var(--text)}
+.seg button.on{color:#fff}
+.seg button.on[data-v=J]{background:var(--ju)} .seg button.on[data-v=A]{background:var(--alex)} .seg button.on[data-v=JA]{background:var(--both)}
+.seg button.on[data-v=all]{background:var(--text)}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:22px;padding:0;width:min(720px,94vw);max-height:90vh;box-shadow:0 30px 80px -20px rgba(80,50,30,.35)}
+dialog::backdrop{background:rgba(74,59,49,.35);backdrop-filter:blur(3px)}
+.dhead{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:1}
+.dhead h2{margin:0;font-size:28px;font-style:italic;font-weight:500}
+.dbody{padding:22px 24px}
+.dfoot{display:flex;gap:8px;justify-content:space-between;padding:14px 24px;border-top:1px solid var(--line);position:sticky;bottom:0;background:var(--panel)}
+.x{background:none;border:none;color:var(--muted);font-size:26px;cursor:pointer;line-height:1}
+.journal li{list-style:none;padding:9px 0;border-bottom:1px dashed var(--line);display:flex;gap:10px}
+.journal ul{padding:0;margin:8px 0}
+.journal .d{color:var(--amber);font-size:12px;white-space:nowrap;min-width:78px}
+.journal .t{flex:1;white-space:pre-wrap}
+.journal .del{background:none;border:none;color:var(--muted);cursor:pointer}
+.hist{font-size:13px;color:var(--muted)}
+.hist b{color:var(--text);font-weight:500}
+.toolbar{display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
+.toolbar input{max-width:260px;border-radius:30px}
+.pos{color:var(--ok)} .neg{color:var(--bad)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ok);color:#fff;padding:11px 20px;border-radius:30px;font-weight:500;z-index:9999;box-shadow:0 10px 30px -8px rgba(80,50,30,.4);max-width:90vw}
+.toast.bad{background:var(--bad)}
+.ytable tr.cur td{background:#fbf1e6}
+.ytable th.grp{border-bottom:none;font-size:20px;font-family:var(--fh);font-style:italic;text-transform:none;letter-spacing:0;text-align:center;font-weight:600}
+.bar{height:6px;background:var(--panel2);border-radius:6px;overflow:hidden}
+.bar span{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#e0b48c,var(--amber))}
+.deco{display:block;margin:40px auto 0;opacity:.45}
+.btn.icon{width:34px;height:34px;padding:0;font-size:16px;display:inline-flex;align-items:center;justify-content:center}
+nav{margin-left:4px!important}
+.tab{padding:7px 11px!important}
+header h1{font-size:26px!important}
+.emv{flex:none}
+.compte-box{display:flex;align-items:center;gap:8px}
+.compte-sel{width:auto;border-radius:30px;padding:7px 34px 7px 16px;font-family:var(--fh);font-style:italic;font-size:20px;font-weight:600;color:var(--amber2);background:var(--panel2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a95f42' fill='none' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 14px center;appearance:none;-webkit-appearance:none;border-color:transparent;cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--line);background:var(--panel);padding:7px 16px;border-radius:30px;cursor:pointer;font:500 13.5px var(--fb);transition:all .2s}
+.chip:hover{transform:translateY(-1px)}
+.split{font-size:11px;color:var(--muted);margin-left:2px}
+.mgr{display:flex;flex-direction:column;gap:10px}
+.mrow{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.mrow.compte{flex-direction:column;align-items:stretch}
+.mrow.add{background:var(--panel2);border-style:dashed}
+.mrow input{border-color:transparent;background:transparent;font-weight:500}
+.mrow input:hover{border-color:var(--line)}
+.mrow.add input{background:#fff;border-color:var(--line)}
+.swatch{width:26px;height:26px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px var(--line);cursor:pointer;flex:none}
+.seg button{flex:none}
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:24px;margin-bottom:10px}
+.bwrap{display:flex;flex-direction:column;gap:12px}
+.bcard{aspect-ratio:1.586;border-radius:18px;padding:20px 22px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;
+  box-shadow:0 18px 40px -18px rgba(40,25,10,.55),0 2px 6px rgba(40,25,10,.15),inset 0 1px 0 rgba(255,255,255,.25);transition:transform .3s}
+.bcard:hover{transform:translateY(-3px) rotate(-.4deg)}
+.bcard::before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.16) 44%,transparent 58%);pointer-events:none}
+.bcard::after{content:"";position:absolute;right:-60px;bottom:-80px;width:220px;height:220px;border-radius:50%;border:1px solid currentColor;opacity:.12;pointer-events:none}
+.btop{display:flex;justify-content:space-between;align-items:flex-start}
+.blbl{font-size:10.5px;letter-spacing:2px;text-transform:uppercase;opacity:.8}
+.bmid{display:flex;align-items:center;gap:12px}
+.bamt{font-family:var(--fb);font-size:30px;font-weight:500;letter-spacing:1.5px;text-shadow:0 1px 1px rgba(0,0,0,.25)}
+.bbot{display:flex;justify-content:space-between;align-items:flex-end}
+.bname{font-size:15px;letter-spacing:3px;font-weight:500}
+.blevel{font-family:var(--fh);font-style:italic;font-weight:700;font-size:20px;letter-spacing:1.5px}
+.c-black{background:radial-gradient(circle at 18% 0%,#4a4a52 0%,#1c1c21 55%,#0d0d10 100%);color:#d8d8de}
+.c-gold{background:linear-gradient(130deg,#8f6c2a 0%,#e2c274 30%,#b68a3a 55%,#f1da9c 78%,#a07834 100%);color:#3e2c0e}
+.c-gold .bamt,.c-platinum .bamt,.c-rose .bamt{text-shadow:0 1px 0 rgba(255,255,255,.45)}
+.c-platinum{background:linear-gradient(130deg,#a9b1b9 0%,#eef1f4 35%,#b6bec6 62%,#e3e7eb 85%,#9aa3ac 100%);color:#353c45}
+.c-rose{background:linear-gradient(130deg,#c98592 0%,#f3cfd3 40%,#d79aa5 70%,#f6dde0 100%);color:#5b2833}
+.c-bleu{background:linear-gradient(130deg,#0e1d3a 0%,#2c4b80 55%,#132b55 100%);color:#e3eaf6}
+.c-verte{background:linear-gradient(130deg,#0e3a2c 0%,#2f7a5c 55%,#12463a 100%);color:#e1f1e9}
+.vlist{padding:8px 16px}
+.vrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px dashed var(--line)}
+.vrow:last-child{border-bottom:none}
+.vright{display:flex;align-items:center;gap:10px;text-align:right}
+.vamt{font-weight:600;white-space:nowrap}
+.mini-l{font-size:12px;margin-top:2px}
+.minis{display:flex;gap:6px;flex-wrap:wrap}
+.mini{width:42px;height:27px;border-radius:5px;border:none;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s}
+.mini:hover{transform:translateY(-2px)}
+.mini.on{outline:2px solid var(--amber);outline-offset:2px}
+.mrow{flex-wrap:wrap}
+.mrow > input{flex:1;min-width:140px}
+.iban{display:inline-flex;align-items:center;gap:6px;margin-top:4px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;letter-spacing:.3px;color:var(--muted);background:var(--panel2);padding:3px 9px;border-radius:20px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.iban:hover{color:var(--amber2);background:#f3e2d6}
+.iban .cp{font-family:var(--fb);font-size:12px}
+.ribgrid{display:grid;grid-template-columns:1fr 1.6fr;gap:8px 12px;margin-top:4px}
+.ribgrid label{margin-bottom:3px}
+.mrow.compte .ribgrid input,.mrow.compte .ribgrid select{background:#fff;border-color:var(--line);font-weight:400;padding:7px 10px}
+.vrow{flex-wrap:wrap}
+.vrow > div:first-child{min-width:0;flex:1}
+.vib{flex-basis:100%;font-size:11.5px;color:var(--muted);margin-top:-2px}
+.compte-sel{max-width:230px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap}
+@media(max-width:800px){.ribgrid{grid-template-columns:1fr}}
+
+.sync{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.sync i{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block}
+.sync.pending i{background:var(--both);animation:pulse 1s infinite} .sync.off i{background:var(--muted)} .sync.err i{background:var(--bad)}
+.sync span{display:none} .sync:hover span{display:inline}
+@keyframes pulse{50%{opacity:.3}}
+.who{width:34px;height:34px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--line);background:var(--panel2);cursor:pointer;padding:0;overflow:hidden;font:600 14px var(--fb);color:var(--amber2)}
+.who img{width:100%;height:100%;object-fit:cover}
+body.locked header,body.locked main,body.locked .deco{display:none}
+#login:empty{display:none}
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{background:var(--panel);border:1px solid var(--line);border-radius:28px;padding:44px 48px;text-align:center;box-shadow:var(--shadow);max-width:420px;width:100%}
+.login-card h1{font-size:44px;margin:8px 0 2px;font-style:italic;font-weight:500}
+.login-card .gbtn{margin-top:22px;display:inline-flex;align-items:center;gap:10px;padding:11px 22px;font-size:15px}
+.login-err{color:var(--bad);font-size:13.5px;background:#f8e7e2;padding:10px 14px;border-radius:12px}
+@media(max-width:800px){.kpis{grid-template-columns:1fr}.fgrid{grid-template-columns:1fr}main{padding:16px}header{padding:12px 16px}header h1{font-size:24px}}
+</style>
+</head>
+<body>
+<header>
+  <h1><svg width="34" height="34" viewBox="0 0 40 40" fill="none" stroke="#c47a5a" stroke-width="1.4" stroke-linecap="round"><circle cx="20" cy="22" r="7"/><path d="M20 9v4M20 31v4M7 22h4M29 22h4M10.8 12.8l2.8 2.8M26.4 28.4l2.8 2.8M29.2 12.8l-2.8 2.8M13.6 28.4l-2.8 2.8"/><path d="M4 36c5-3 10-3 16 0s11 3 16 0" stroke="#6b9395"/></svg>Prélèvements</h1>
+  <div class="compte-box"><select id="compteSel" class="compte-sel" title="Choisir le compte"></select><button class="btn sm" id="btnGerer" title="Créer et gérer les comptes et les personnes">✦ Gérer</button></div>
+  <nav id="nav">
+    <button class="tab on" data-view="mois">Mois</button>
+    <button class="tab" data-view="synthese">Synthèse</button>
+    <button class="tab" data-view="prel">Prélèvements</button>
+    <button class="tab" data-view="vers">Versements</button>
+    <button class="tab" data-view="annee">Année</button>
+    <button class="tab" data-view="bilan">Bilan</button>
+  </nav>
+  <div class="spacer"></div>
+  <div class="sync ok" id="sync" title="Synchronisé"><i></i><span>Synchronisé</span></div>
+  <button class="btn icon" id="btnExport" title="Exporter une sauvegarde (.json)">⤓</button>
+  <button class="btn icon" id="btnImport" title="Importer une sauvegarde (.json)">⤒</button>
+  <input type="file" id="fileImport" accept=".json" hidden>
+  <button class="who" id="who" title="Mon compte"></button>
+</header>
+<main id="main"></main>
+<svg class="deco" width="180" height="30" viewBox="0 0 180 30" fill="none" stroke="#c9a06a" stroke-width="1.2" stroke-linecap="round"><path d="M0 15h60M120 15h60"/><path d="M75 15c0-6 5-10 15-10s15 4 15 10-5 10-15 10-15-4-15-10z"/><circle cx="90" cy="15" r="3" fill="#c47a5a" stroke="none"/><path d="M66 15l4-4 4 4-4 4zM106 15l4-4 4 4-4 4z"/></svg>
+
+<dialog id="dlg"></dialog>
+<div id="login"></div>
+
+<script>
+/* ============ Données ============ */
+const KEY = 'prelevements_crm_v1';
+const COLORS = ['#6b9395','#c98b8f','#c9a06a','#8f84b5','#7a9a6a','#c47a5a','#5f80a8','#b07a9c','#a0896a'];
+const CARTES = {
+  black:{ label:'Black', couleur:'#4a4a52' }, gold:{ label:'Gold', couleur:'#b08a3e' }, platinum:{ label:'Platinum', couleur:'#8d98a3' },
+  rose:{ label:'Rose', couleur:'#c98b95' }, bleu:{ label:'Bleue', couleur:'#3d5f94' }, verte:{ label:'Verte', couleur:'#3f8a6a' } };
+let newCarte = 'bleu';
+const RIBS_ = () => db.ribs || [];
+const ibanClean = s => String(s||'').replace(/\s+/g,'').toUpperCase();
+const ibanFmt = s => ibanClean(s).replace(/(.{4})/g,'$1 ').trim();
+function ibanValide(s){
+  const i = ibanClean(s); if(!/^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/.test(i)) return false;
+  const r = (i.slice(4)+i.slice(0,4)).replace(/[A-Z]/g, c => c.charCodeAt(0)-55);
+  let m = 0; for(const ch of r) m = (m*10 + Number(ch)) % 97; return m === 1;
+}
+function copier(txt, label){
+  const ok = () => toast((label||'IBAN') + ' copié');
+  if(navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(txt).then(ok, () => fallback());
+  else fallback();
+  function fallback(){ const t = document.createElement('textarea'); t.value = txt; t.style.position='fixed'; t.style.opacity='0';
+    (dlg.open ? dlg : document.body).appendChild(t); t.select(); try{ document.execCommand('copy'); ok(); }catch(e){ toast('Copie impossible : '+txt, true, 6000); } t.remove(); }
+}
+const ibanTag = (c, court) => c && c.iban ? `<span class="iban" data-copy="${ibanClean(c.iban)}" title="Copier l’IBAN">${c.banque && !court ? esc(c.banque)+' · ' : ''}${ibanFmt(c.iban)} <span class="cp">⧉</span></span>` : '';
+const FREQ = { 1:'Mensuel', 2:'Bimestriel', 3:'Trimestriel', 6:'Semestriel', 12:'Annuel' };
+const STATUTS = { ok:'Actif', renego:'À renégocier', resil:'À résilier' };
+const CATS = ['Logement','Énergie','Assurance','Crédit','Télécom','Abonnement','Transport','Enfants','Santé','Impôts','Épargne','Autre'];
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+function migrate(d){
+  if(!d || !Array.isArray(d.prelevements)) d = { prelevements:[], versements:[] };
+  if(!Array.isArray(d.versements)) d.versements = [];
+  if(!Array.isArray(d.ribs)) d.ribs = [];
+  if(!Array.isArray(d.personnes) || !d.personnes.length)
+    d.personnes = [{ id:'J', nom:'Julien', couleur:COLORS[0] }, { id:'A', nom:'Alexandra', couleur:COLORS[1] }];
+  if(!Array.isArray(d.comptes) || !d.comptes.length)
+    d.comptes = [{ id:'c1', nom:'Compte courant', membres:d.personnes.map(p=>p.id) }];
+  d.personnes.forEach((p,i) => { if(!CARTES[p.carte]) p.carte = p.id==='J' ? 'black' : p.id==='A' ? 'gold' : ['rose','bleu','verte','platinum'][i%4]; });
+  const c0 = d.comptes[0].id;
+  d.prelevements.forEach(p => {
+    if(!p.compteId) p.compteId = c0;
+    if(typeof p.attribution === 'string') p.attribution = p.attribution === 'JA' ? ['J','A'] : [p.attribution];
+    if(!Array.isArray(p.attribution)) p.attribution = [];
+    if(!Array.isArray(p.montants)) p.montants = [{ depuis:(p.dateDebut||'').slice(0,7), montant:Number(p.montant)||0 }];
+    if(!Array.isArray(p.journal)) p.journal = [];
+  });
+  d.versements.forEach(v => { if(!v.compteId) v.compteId = c0; });
+  if(!d.comptes.find(c => c.id === d.compteActif)) d.compteActif = c0;
+  d.version = 2;
+  return d;
+}
+let USER = null;                       // utilisateur connecté
+const cacheKey = () => KEY + ':' + (USER ? USER.uid : 'anon');
+function loadLocal(){ try{ return migrate(JSON.parse(localStorage.getItem(cacheKey()))); }catch(e){ return migrate(null); } }
+let db = migrate(null);
+let view = 'mois';
+let curMonth = monthKey(new Date());
+let curYear = new Date().getFullYear();
+let filterAttr = 'all', filterSearch = '', filterVers = 'all';
+
+let storageWarned = false;
+let pushTimer = null, dirty = false;
+function save(){
+  if(window.cloud && USER){ setSync('pending'); dirty = true; clearTimeout(pushTimer); pushTimer = setTimeout(() => { dirty = false; window.cloud.push(JSON.stringify(db)); }, 600); }
+  try{ localStorage.setItem(cacheKey(), JSON.stringify(db)); }catch(e){
+  if(!storageWarned && !USER){ storageWarned = true; toast("Le navigateur bloque la sauvegarde locale.", true, 5000); } } }
+function setSync(state){
+  const el = document.getElementById('sync'); if(!el) return;
+  const t = { ok:['Synchronisé','ok'], pending:['Enregistrement…','pending'], offline:['Hors ligne · sera synchronisé','off'], error:['Erreur de synchro','err'] }[state];
+  el.className = 'sync ' + t[1]; el.title = t[0]; el.querySelector('span').textContent = t[0];
+}
+
+/* ============ Outils ============ */
+const eur = n => (Number(n)||0).toLocaleString('fr-FR',{style:'currency',currency:'EUR'});
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function monthKey(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
+function addMonths(key, n){ let [y,m] = key.split('-').map(Number); m += n; y += Math.floor((m-1)/12); m = ((m-1)%12+12)%12+1; return y+'-'+String(m).padStart(2,'0'); }
+function diffMonths(a, b){ const [y1,m1]=a.split('-').map(Number), [y2,m2]=b.split('-').map(Number); return (y2-y1)*12 + (m2-m1); }
+function monthLabel(key){ const [y,m]=key.split('-').map(Number); return new Date(y,m-1,1).toLocaleDateString('fr-FR',{month:'long',year:'numeric'}); }
+function monthShort(key){ const [y,m]=key.split('-').map(Number); return new Date(y,m-1,1).toLocaleDateString('fr-FR',{month:'short',year:'2-digit'}); }
+const fmtDate = s => s ? new Date(s+'T12:00').toLocaleDateString('fr-FR') : '';
+const today = () => { const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+
+/* Personnes & comptes */
+const pers = id => db.personnes.find(p => p.id === id);
+const pNom = id => pers(id)?.nom || '?';
+const pCol = id => { const p = pers(id); return p ? (CARTES[p.carte]?.couleur || p.couleur || '#a08f80') : '#a08f80'; };
+function shade(hex, f){ const n = parseInt(hex.slice(1),16); let r=n>>16, g=(n>>8)&255, b=n&255;
+  r=Math.round(r*(1-f)); g=Math.round(g*(1-f)); b=Math.round(b*(1-f)); return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1); }
+const badge = id => `<span class="badge" style="background:${pCol(id)}24;color:${shade(pCol(id),.25)}">${esc(pNom(id))}</span>`;
+const badges = p => p.attribution.map(badge).join(' ') ;
+const compte = () => db.comptes.find(c => c.id === db.compteActif) || db.comptes[0];
+const membres = (c = compte()) => c.membres.filter(id => pers(id));
+const prelevsCompte = (cid = db.compteActif) => db.prelevements.filter(p => p.compteId === cid);
+const versCompte = (cid = db.compteActif) => db.versements.filter(v => v.compteId === cid);
+
+/* Montant en vigueur pour un mois (historique des tarifs) */
+function montantAt(p, key){
+  const h = [...p.montants].sort((a,b)=>a.depuis.localeCompare(b.depuis));
+  let m = h[0] ? h[0].montant : 0;
+  for(const e of h){ if(e.depuis <= key) m = e.montant; }
+  return m;
+}
+const startKey = p => p.dateDebut.slice(0,7);
+const montantActuel = p => montantAt(p, monthKey(new Date()) > startKey(p) ? monthKey(new Date()) : startKey(p));
+const termine = p => !!p.dateFin && p.dateFin.slice(0,7) < monthKey(new Date());
+
+function tombe(p, key){
+  if(p.dateFin && key > p.dateFin.slice(0,7)) return false;
+  const d = diffMonths(startKey(p), key);
+  return d >= 0 && d % (Number(p.frequence)||1) === 0;
+}
+function parts(p, key){
+  const m = montantAt(p, key), n = p.attribution.length || 1, by = {};
+  p.attribution.forEach(id => by[id] = m / n);
+  return { total:m, by };
+}
+function prochaine(p){
+  let k = monthKey(new Date());
+  if(k < startKey(p)) k = startKey(p);
+  for(let i=0;i<13;i++){ const kk = addMonths(k,i); if(tombe(p,kk)) return kk; }
+  return null;
+}
+function idsCompte(cid = db.compteActif){
+  const c = db.comptes.find(x => x.id === cid);
+  const ids = new Set(c ? membres(c) : []);
+  prelevsCompte(cid).forEach(p => p.attribution.forEach(id => pers(id) && ids.add(id)));
+  versCompte(cid).forEach(v => pers(v.personne) && ids.add(v.personne));
+  return [...ids];
+}
+function resumeMois(key, cid = db.compteActif){
+  const ids = idsCompte(cid), du = {}, verse = {};
+  ids.forEach(id => { du[id] = 0; verse[id] = 0; });
+  let total = 0;
+  const lignes = prelevsCompte(cid).filter(p => tombe(p,key)).map(p => ({ p, ...parts(p,key) }))
+    .sort((a,b)=>(a.p.jour||0)-(b.p.jour||0));
+  lignes.forEach(l => { total += l.total; for(const id in l.by) du[id] = (du[id]||0) + l.by[id]; });
+  const vers = versCompte(cid).filter(v => v.date.slice(0,7) === key);
+  vers.forEach(v => verse[v.personne] = (verse[v.personne]||0) + (Number(v.montant)||0));
+  return { lignes, du, verse, total, vers };
+}
+function premierMois(cid = db.compteActif){
+  const ks = [...prelevsCompte(cid).map(startKey), ...versCompte(cid).map(v=>v.date.slice(0,7))];
+  return ks.length ? ks.sort()[0] : monthKey(new Date());
+}
+/* Solde cumulé (versé - dû) depuis le début jusqu'au mois inclus */
+function cumul(key, cid = db.compteActif){
+  const s = {}; idsCompte(cid).forEach(id => s[id] = 0);
+  let k = premierMois(cid);
+  while(k <= key){ const r = resumeMois(k, cid); for(const id in s) s[id] += (r.verse[id]||0) - (r.du[id]||0); k = addMonths(k,1); }
+  return s;
+}
+
+/* ============ Rendu ============ */
+const main = document.getElementById('main');
+function renderCompteSel(){
+  const sel = document.getElementById('compteSel');
+  sel.innerHTML = db.comptes.map(c => `<option value="${c.id}" ${c.id===db.compteActif?'selected':''}>${esc(c.nom)}</option>`).join('');
+}
+function render(){
+  renderCompteSel();
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.view===view));
+  if(view === 'synthese') return renderSynthese();
+  if(!idsCompte().length){
+    main.innerHTML = `<div class="card empty">Ce compte n’a encore aucun membre.<br><button class="btn primary" style="margin-top:14px;font-style:normal" data-act="gerer">Ajouter des personnes au compte</button></div>`;
+    return;
+  }
+  ({ mois:renderMois, prel:renderPrel, vers:renderVers, annee:renderAnnee, bilan:renderBilan })[view]();
+}
+const segBtn = (v, label, on, col) => `<button data-v="${v}" class="${on?'on':''}" ${on?`style="background:${col}"`:''}>${esc(label)}</button>`;
+
+function kpiPersonne(id, r, c){
+  const du = r.du[id]||0, verse = r.verse[id]||0, reste = du - verse;
+  const resteHtml = reste > 0.004
+    ? `<div class="reste due"><span>Reste à verser</span><span>${eur(reste)}</span></div>`
+    : `<div class="reste okk"><span>${reste < -0.004 ? 'Versé en plus' : 'À jour'}</span><span>${reste < -0.004 ? eur(-reste) : '✓'}</span></div>`;
+  const cv = c[id]||0;
+  const cumulTxt = Math.abs(cv) < 0.005 ? 'Cumul depuis le début : à l’équilibre'
+    : `Cumul depuis le début : <span class="${cv>0?'pos':'neg'}">${cv>0?'avance de ':'retard de '}${eur(Math.abs(cv))}</span>`;
+  return `<div class="card kpi" style="--c:${pCol(id)}">
+    <div class="lbl" style="color:${shade(pCol(id),.15)}">${esc(pNom(id))}</div>
+    <div class="num">${eur(du)}</div>
+    <div class="sub"><span>Part due</span><b>${eur(du)}</b></div>
+    <div class="sub"><span>Déjà versé</span><b>${eur(verse)}</b></div>
+    ${resteHtml}
+    <div class="cumul">${cumulTxt}</div>
+  </div>`;
+}
+
+function renderMois(){
+  const r = resumeMois(curMonth), c = cumul(curMonth), ids = idsCompte();
+  const totalVerse = Object.values(r.verse).reduce((a,b)=>a+b,0);
+  main.innerHTML = `
+  <div class="monthnav">
+    <button class="btn" data-act="prev">◀</button>
+    <h2>${monthLabel(curMonth)}</h2>
+    <button class="btn" data-act="next">▶</button>
+    <button class="btn sm" data-act="today">Aujourd’hui</button>
+    <div class="spacer"></div>
+    ${compte().iban ? `<div class="hist" style="text-align:right">${esc(compte().nom)}${compte().note ? ' · '+esc(compte().note) : ''}<br>${ibanTag(compte())}</div>` : ''}
+  </div>
+  <div class="kpis">
+    <div class="card kpi tot">
+      <div class="lbl">Total des prélèvements</div>
+      <div class="num">${eur(r.total)}</div>
+      <div class="sub"><span>Nombre</span><b>${r.lignes.length}</b></div>
+      <div class="sub"><span>Versé au total</span><b>${eur(totalVerse)}</b></div>
+    </div>
+    ${ids.map(id => kpiPersonne(id, r, c)).join('')}
+  </div>
+
+  <div class="card" style="overflow-x:auto">
+    <div class="section-title" style="margin-top:0"><h3>Prélèvements du mois</h3><button class="btn sm primary" data-act="newPrel">+ Prélèvement</button></div>
+    ${r.lignes.length ? `<table>
+      <thead><tr><th>Jour</th><th>Créancier</th><th>Catégorie</th><th>Pour</th><th class="r">Montant</th>${ids.map(id=>`<th class="r" style="color:${shade(pCol(id),.15)}">${esc(pNom(id))}</th>`).join('')}</tr></thead>
+      <tbody>${r.lignes.map(l=>`<tr class="click" data-open="${l.p.id}">
+        <td>${l.p.jour ? 'le '+l.p.jour : '—'}</td><td><b>${esc(l.p.nom)}</b></td><td>${esc(l.p.categorie)}</td>
+        <td>${badges(l.p)}</td>
+        <td class="r">${eur(l.total)}</td>${ids.map(id=>`<td class="r">${l.by[id]?eur(l.by[id]):'—'}</td>`).join('')}</tr>`).join('')}</tbody>
+      <tfoot><tr><td colspan="4">Total</td><td class="r">${eur(r.total)}</td>${ids.map(id=>`<td class="r">${eur(r.du[id])}</td>`).join('')}</tr></tfoot>
+    </table>` : `<div class="empty">Aucun prélèvement ce mois-ci.</div>`}
+  </div>
+
+  <div class="card" style="margin-top:18px">
+    <div class="section-title" style="margin-top:0"><h3>Versements du mois</h3><button class="btn sm primary" data-act="newVers">+ Versement</button></div>
+    ${r.vers.length ? versTable(r.vers) : `<div class="empty">Aucun versement noté ce mois-ci.</div>`}
+  </div>`;
+}
+
+function versTable(list){
+  list = [...list].sort((a,b)=>b.date.localeCompare(a.date));
+  return `<table><thead><tr><th>Date</th><th>Qui</th><th>Note</th><th class="r">Montant</th></tr></thead>
+  <tbody>${list.map(v=>`<tr class="click" data-vers="${v.id}"><td>${fmtDate(v.date)}</td>
+    <td>${badge(v.personne)}</td><td>${esc(v.note)}</td><td class="r"><b>${eur(v.montant)}</b></td></tr>`).join('')}</tbody></table>`;
+}
+
+function renderPrel(){
+  const ids = idsCompte();
+  if(filterAttr!=='all' && filterAttr!=='shared' && !ids.includes(filterAttr)) filterAttr = 'all';
+  const q = filterSearch.toLowerCase();
+  const list = prelevsCompte().filter(p =>
+    (filterAttr==='all' || (filterAttr==='shared' ? p.attribution.length>1 : p.attribution.includes(filterAttr))) &&
+    (!q || (p.nom+' '+p.categorie+' '+(p.contrat||'')+' '+(p.notes||'')).toLowerCase().includes(q))
+  ).sort((a,b)=> (termine(a)-termine(b)) || a.nom.localeCompare(b.nom));
+  const totalMensuel = list.filter(p=>!termine(p)).reduce((s,p)=> s + montantActuel(p)/(Number(p.frequence)||1), 0);
+  main.innerHTML = `
+  <div class="toolbar">
+    <input id="search" placeholder="Rechercher…" value="${esc(filterSearch)}">
+    <div class="seg" id="segAttr">
+      ${segBtn('all','Tous',filterAttr==='all','var(--text)')}
+      ${ids.map(id=>segBtn(id,pNom(id),filterAttr===id,pCol(id))).join('')}
+      ${segBtn('shared','Partagés',filterAttr==='shared','var(--both)')}
+    </div>
+    <div class="spacer"></div>
+    <span style="color:var(--muted)">${list.length} fiche(s) · ≈ ${eur(totalMensuel)}/mois</span>
+    <button class="btn primary" data-act="newPrel">+ Nouveau prélèvement</button>
+  </div>
+  ${list.length ? `<div class="grid">${list.map(p=>{
+    const nx = prochaine(p), fini = termine(p);
+    return `<div class="card pcard${fini?' fini':''}" data-open="${p.id}">
+      <div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div><h3>${esc(p.nom)}</h3><div class="cat">${esc(p.categorie)}</div></div>
+        ${fini ? '<span class="st">Terminé</span>' : p.statut && p.statut!=='ok' ? `<span class="st ${p.statut}">${STATUTS[p.statut]}</span>` : ''}
+      </div>
+      <div class="amt">${eur(montantActuel(p))} <small>${FREQ[p.frequence].toLowerCase()}${p.jour?' · le '+p.jour:''}</small></div>
+      <div class="meta"><span>${badges(p)}</span>
+        <span>${fini ? 'Fini en '+monthShort(p.dateFin.slice(0,7)) : (nx ? 'Prochain : '+monthShort(nx) : '') + (p.dateFin && !fini ? ' · fin '+monthShort(p.dateFin.slice(0,7)) : '')}</span></div>
+    </div>`;}).join('')}</div>`
+  : `<div class="card empty">${prelevsCompte().length ? 'Aucun résultat.' : 'Aucun prélèvement sur ce compte. Ajoute le premier avec « + Nouveau prélèvement ».'}</div>`}`;
+  document.getElementById('search').oninput = e => { filterSearch = e.target.value; renderPrel(); const n=document.getElementById('search'); n.focus(); n.setSelectionRange(n.value.length,n.value.length); };
+  document.querySelectorAll('#segAttr button').forEach(b => b.onclick = () => { filterAttr = b.dataset.v; renderPrel(); });
+}
+
+function renderVers(){
+  const ids = idsCompte();
+  if(filterVers!=='all' && !ids.includes(filterVers)) filterVers = 'all';
+  const list = versCompte().filter(v => filterVers==='all' || v.personne===filterVers);
+  const tot = {}; ids.forEach(id => tot[id] = 0); versCompte().forEach(v => tot[v.personne] = (tot[v.personne]||0) + (Number(v.montant)||0));
+  main.innerHTML = `
+  <div class="toolbar">
+    <div class="seg" id="segV">
+      ${segBtn('all','Tous',filterVers==='all','var(--text)')}
+      ${ids.map(id=>segBtn(id,pNom(id),filterVers===id,pCol(id))).join('')}
+    </div>
+    <div class="spacer"></div>
+    <span style="color:var(--muted)">${ids.map(id=>`<span class="dot" style="background:${pCol(id)}"></span>${esc(pNom(id))} ${eur(tot[id])}`).join(' &nbsp; ')}</span>
+    <button class="btn primary" data-act="newVers">+ Versement</button>
+  </div>
+  <div class="card">${list.length ? versTable(list) : `<div class="empty">Aucun versement noté.</div>`}</div>`;
+  document.querySelectorAll('#segV button').forEach(b => b.onclick = () => { filterVers = b.dataset.v; renderVers(); });
+}
+
+const resteCell = (d,v) => { const x = d - v;
+  if(Math.abs(x) < 0.005) return d > 0 ? '<span class="pos">✓</span>' : '<span style="color:var(--muted)">—</span>';
+  return x > 0 ? `<span class="neg">${eur(x)}</span>` : `<span class="pos">+${eur(-x)}</span>`; };
+
+function renderAnnee(){
+  const now = monthKey(new Date()), ids = idsCompte();
+  const rows = [], T = { tot:0, n:0, d:{}, v:{} };
+  ids.forEach(id => { T.d[id] = 0; T.v[id] = 0; });
+  for(let m=1;m<=12;m++){
+    const k = curYear + '-' + String(m).padStart(2,'0'); const r = resumeMois(k);
+    rows.push({ k, r }); T.tot += r.total; T.n += r.lignes.length;
+    ids.forEach(id => { T.d[id] += r.du[id]||0; T.v[id] += r.verse[id]||0; });
+  }
+  const actifs = rows.filter(x=>x.r.total>0).length || 1, moy = T.tot/actifs, max = Math.max(...rows.map(x=>x.r.total), 1);
+  main.innerHTML = `
+  <div class="monthnav">
+    <button class="btn" data-act="yprev">◀</button>
+    <h2>${curYear}</h2>
+    <button class="btn" data-act="ynext">▶</button>
+    <button class="btn sm" data-act="ytoday">Cette année</button>
+  </div>
+  <div class="kpis">
+    <div class="card kpi tot"><div class="lbl">Total de l’année</div><div class="num">${eur(T.tot)}</div>
+      <div class="sub"><span>Moyenne par mois</span><b>${eur(moy)}</b></div><div class="sub"><span>Prélèvements</span><b>${T.n}</b></div></div>
+    ${ids.map(id=>`<div class="card kpi" style="--c:${pCol(id)}"><div class="lbl" style="color:${shade(pCol(id),.15)}">${esc(pNom(id))}</div><div class="num">${eur(T.d[id])}</div>
+      <div class="sub"><span>Versé</span><b>${eur(T.v[id])}</b></div><div class="sub"><span>Reste</span><b>${resteCell(T.d[id],T.v[id])}</b></div></div>`).join('')}
+  </div>
+  <div class="card" style="overflow-x:auto">
+    <table class="ytable">
+      <thead>
+        <tr><th rowspan="2">Mois</th><th rowspan="2" class="r">Total à payer</th><th rowspan="2"></th>
+          ${ids.map(id=>`<th colspan="3" class="grp" style="color:${shade(pCol(id),.15)}">${esc(pNom(id))}</th>`).join('')}</tr>
+        <tr>${ids.map(()=>`<th class="r">À payer</th><th class="r">Versé</th><th class="r">Reste</th>`).join('')}</tr>
+      </thead>
+      <tbody>${rows.map(({k,r})=>`<tr class="click ${k===now?'cur':''}" data-month="${k}" title="Voir le détail du mois">
+        <td><b style="text-transform:capitalize;display:inline-block">${new Date(curYear, Number(k.slice(5))-1, 1).toLocaleDateString('fr-FR',{month:'long'})}</b>${k===now?' <span class="st">en cours</span>':''}</td>
+        <td class="r"><b>${eur(r.total)}</b>${r.total > moy*1.15 && r.total>0 ? ' <span title="Mois plus chargé que la moyenne" style="color:var(--amber2)">▲</span>' : ''}</td>
+        <td style="width:90px"><div class="bar"><span style="width:${(r.total/max*100).toFixed(1)}%"></span></div></td>
+        ${ids.map(id=>`<td class="r">${eur(r.du[id])}</td><td class="r">${eur(r.verse[id])}</td><td class="r">${resteCell(r.du[id]||0,r.verse[id]||0)}</td>`).join('')}</tr>`).join('')}</tbody>
+      <tfoot><tr><td>Total ${curYear}</td><td class="r">${eur(T.tot)}</td><td></td>
+        ${ids.map(id=>`<td class="r">${eur(T.d[id])}</td><td class="r">${eur(T.v[id])}</td><td class="r">${resteCell(T.d[id],T.v[id])}</td>`).join('')}</tr></tfoot>
+    </table>
+    <div class="cumul" style="margin-top:10px">▲ = mois plus chargé que la moyenne · Reste en rouge = encore à verser · en vert = versé en plus · clique sur un mois pour le détail</div>
+  </div>`;
+}
+
+function renderBilan(){
+  const ids = idsCompte();
+  const fin = monthKey(new Date()) > curMonth ? monthKey(new Date()) : curMonth;
+  const rows = []; let k = addMonths(fin, -11);
+  const T = { tot:0, d:{}, v:{} }; ids.forEach(id => { T.d[id]=0; T.v[id]=0; });
+  for(let i=0;i<12;i++){
+    const r = resumeMois(k); rows.push({ k, r }); T.tot += r.total;
+    ids.forEach(id => { T.d[id] += r.du[id]||0; T.v[id] += r.verse[id]||0; });
+    k = addMonths(k,1);
+  }
+  const ecart = (v,d) => { const e = v-d; return Math.abs(e)<0.005 ? '<span style="color:var(--muted)">0</span>' : `<span class="${e>0?'pos':'neg'}">${e>0?'+':''}${eur(e)}</span>`; };
+  const c = cumul(fin);
+  main.innerHTML = `
+  <div class="kpis">
+    ${ids.map(id=>{ const v = c[id]||0; return `<div class="card kpi" style="--c:${pCol(id)}"><div class="lbl" style="color:${shade(pCol(id),.15)}">${esc(pNom(id))} · cumul depuis le début</div>
+      <div class="num ${v<-0.004?'neg':'pos'}">${v>0.004?'+':''}${eur(v)}</div>
+      <div class="cumul">${v<-0.004?'En retard sur ses versements':v>0.004?'En avance sur ses versements':'À l’équilibre'}</div></div>`; }).join('')}
+  </div>
+  <div class="card" style="overflow-x:auto">
+    <div class="section-title" style="margin-top:0"><h3>12 derniers mois</h3></div>
+    <table class="ytable">
+      <thead>
+        <tr><th rowspan="2">Mois</th><th rowspan="2" class="r">Total</th>${ids.map(id=>`<th colspan="3" class="grp" style="color:${shade(pCol(id),.15)}">${esc(pNom(id))}</th>`).join('')}</tr>
+        <tr>${ids.map(()=>`<th class="r">Dû</th><th class="r">Versé</th><th class="r">Écart</th>`).join('')}</tr>
+      </thead>
+      <tbody>${rows.map(({k,r})=>`<tr class="click" data-month="${k}"><td style="text-transform:capitalize">${monthLabel(k)}</td><td class="r">${eur(r.total)}</td>
+        ${ids.map(id=>`<td class="r">${eur(r.du[id])}</td><td class="r">${eur(r.verse[id])}</td><td class="r">${ecart(r.verse[id]||0,r.du[id]||0)}</td>`).join('')}</tr>`).join('')}</tbody>
+      <tfoot><tr><td>Total 12 mois</td><td class="r">${eur(T.tot)}</td>${ids.map(id=>`<td class="r">${eur(T.d[id])}</td><td class="r">${eur(T.v[id])}</td><td class="r">${ecart(T.v[id],T.d[id])}</td>`).join('')}</tr></tfoot>
+    </table>
+  </div>`;
+}
+
+/* ============ Synthèse (tous les comptes) ============ */
+const SVG_CHIP = `<svg class="emv" width="44" height="34" viewBox="0 0 44 34"><defs><linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6e2a6"/><stop offset=".5" stop-color="#c9a24e"/><stop offset="1" stop-color="#f0d488"/></linearGradient></defs><rect x="1" y="1" width="42" height="32" rx="6" fill="url(#cg)" stroke="rgba(0,0,0,.25)"/><path d="M1 12h12M1 22h12M31 12h12M31 22h12M13 1v32M31 1v32M13 17h18" stroke="rgba(90,60,10,.45)" fill="none"/></svg>`;
+const SVG_NFC = `<svg width="22" height="26" viewBox="0 0 22 26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".75"><path d="M4 8c2.2 3.3 2.2 6.7 0 10M9 5c3.8 5 3.8 11 0 16M14 2c5.3 7 5.3 15 0 22"/></svg>`;
+const SVG_SUN = `<svg width="34" height="34" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".85"><circle cx="20" cy="20" r="7"/><path d="M20 6v4M20 30v4M6 20h4M30 20h4M10.1 10.1l2.8 2.8M27.1 27.1l2.8 2.8M29.9 10.1l-2.8 2.8M12.9 27.1l-2.8 2.8"/></svg>`;
+
+function etatPersonnes(key){
+  const map = {};
+  db.comptes.forEach(c => {
+    const r = resumeMois(key, c.id);
+    idsCompte(c.id).forEach(id => {
+      const du = r.du[id]||0, v = r.verse[id]||0;
+      if(Math.abs(du) < 0.005 && Math.abs(v) < 0.005) return;
+      (map[id] ||= []).push({ c, du, verse:v, reste:du - v });
+    });
+  });
+  const actifs = new Set(db.comptes.flatMap(c => membres(c)));
+  return db.personnes.filter(p => map[p.id] || actifs.has(p.id)).map(p => {
+    const lignes = map[p.id] || [];
+    return { id:p.id, lignes, aVirer:lignes.reduce((s,l)=>s+Math.max(0,l.reste),0), du:lignes.reduce((s,l)=>s+l.du,0) };
+  });
+}
+function bankCard(x){
+  const p = pers(x.id), t = p.carte;
+  return `<div class="bcard c-${t}">
+    <div class="btop"><span class="blbl">À virer · ${monthLabel(curMonth)}</span>${SVG_SUN}</div>
+    <div class="bmid">${SVG_CHIP}${SVG_NFC}</div>
+    <div class="bamt">${x.aVirer > 0.004 ? eur(x.aVirer) : 'À jour ✓'}</div>
+    <div class="bbot"><span class="bname">${esc(p.nom.toUpperCase())}</span><span class="blevel">${CARTES[t].label.toUpperCase()}</span></div>
+  </div>`;
+}
+function renderSynthese(){
+  const list = etatPersonnes(curMonth);
+  const ids = list.filter(x => x.lignes.length).map(x => x.id);
+  const parCompte = db.comptes.map(c => ({ c, r:resumeMois(curMonth, c.id) }));
+  const totalMois = parCompte.reduce((s,x)=>s+x.r.total,0);
+  const cell = (du, v) => { if(Math.abs(du)<0.005 && Math.abs(v)<0.005) return '<span style="color:var(--muted)">—</span>';
+    const re = du - v; return `${eur(du)}<div class="mini-l">${re>0.004 ? `<span class="neg">reste ${eur(re)}</span>` : re<-0.004 ? `<span class="pos">+${eur(-re)}</span>` : '<span class="pos">✓ versé</span>'}</div>`; };
+  main.innerHTML = `
+  <div class="monthnav">
+    <button class="btn" data-act="prev">◀</button>
+    <h2>${monthLabel(curMonth)}</h2>
+    <button class="btn" data-act="next">▶</button>
+    <button class="btn sm" data-act="today">Aujourd’hui</button>
+  </div>
+
+  <div class="section-title" style="margin-top:0"><h3>Par personne</h3><span class="hist">Les virements à faire sur chaque compte</span></div>
+  ${list.length ? `<div class="bgrid">${list.map(x => `
+    <div class="bwrap">
+      ${bankCard(x)}
+      <div class="card vlist">
+        ${x.lignes.length ? x.lignes.map(l => `
+          <div class="vrow">
+            <div><b>${esc(l.c.nom)}</b><div class="hist">${l.c.banque ? esc(l.c.banque)+' · ' : ''}dû ${eur(l.du)} · versé ${eur(l.verse)}</div></div>
+            <div class="vright">${l.reste > 0.004
+              ? `<span class="neg vamt">${eur(l.reste)}</span><button class="btn sm primary" data-vfait="${x.id}|${l.c.id}|${l.reste.toFixed(2)}">Virement fait</button>`
+              : l.reste < -0.004 ? `<span class="pos">+${eur(-l.reste)} en plus</span>` : '<span class="pos">À jour ✓</span>'}</div>
+            ${l.reste > 0.004 && l.c.iban ? `<div class="vib">Virer sur ${ibanTag(l.c, true)}</div>` : ''}
+          </div>`).join('') : '<div class="hist" style="text-align:center;padding:6px">Aucun prélèvement ce mois-ci.</div>'}
+      </div>
+    </div>`).join('')}</div>` : `<div class="card empty">Aucune personne pour l’instant. Ajoute-en dans « Comptes & personnes ».</div>`}
+
+  <div class="section-title"><h3>Par compte</h3><span class="hist">Clique sur un compte pour voir son détail</span></div>
+  <div class="card" style="overflow-x:auto">
+    <table>
+      <thead><tr><th>Compte</th><th class="r">Total du mois</th>${ids.map(id=>`<th class="r" style="color:${shade(pCol(id),.1)}">${esc(pNom(id))}</th>`).join('')}</tr></thead>
+      <tbody>${parCompte.map(({c,r}) => `<tr class="click" data-compte="${c.id}">
+        <td><b>${esc(c.nom)}</b><div class="mini-l" style="color:var(--muted)">${r.lignes.length} prélèvement(s)${c.note ? ' · '+esc(c.note) : ''}</div>${ibanTag(c)}</td>
+        <td class="r"><b>${eur(r.total)}</b></td>
+        ${ids.map(id => `<td class="r">${cell(r.du[id]||0, r.verse[id]||0)}</td>`).join('')}</tr>`).join('')}</tbody>
+      <tfoot><tr><td>Total</td><td class="r">${eur(totalMois)}</td>${ids.map(id => { const x = list.find(y=>y.id===id); return `<td class="r">${eur(x.du)}<div class="mini-l">${x.aVirer>0.004 ? `<span class="neg">reste ${eur(x.aVirer)}</span>` : '<span class="pos">✓ versé</span>'}</div></td>`; }).join('')}</tr></tfoot>
+    </table>
+  </div>`;
+}
+
+/* ============ Vérifications & messages ============ */
+function checkForm(f){
+  let ok = true;
+  f.querySelectorAll('[required]').forEach(el => {
+    const bad = !String(el.value).trim() || (el.type==='number' && isNaN(parseFloat(el.value)));
+    el.style.borderColor = bad ? 'var(--bad)' : '';
+    if(bad && ok){ ok = false; el.focus(); }
+  });
+  if(!ok) toast('Remplis les champs obligatoires (en rouge)', true);
+  return ok;
+}
+function confirm2(btn, fn){
+  let armed = false; const txt = btn.textContent;
+  btn.onclick = () => { if(armed) return fn(); armed = true; btn.textContent = 'Confirmer la suppression ?'; btn.style.background = '#f8e7e2';
+    setTimeout(() => { armed = false; btn.textContent = txt; btn.style.background = ''; }, 4000); };
+}
+function toast(msg, bad, ms){
+  const t = document.createElement('div'); t.className = 'toast' + (bad ? ' bad' : ''); t.textContent = msg;
+  (dlg.open ? dlg : document.body).appendChild(t); setTimeout(() => t.remove(), ms || 2600);
+}
+
+/* ============ Fiche prélèvement ============ */
+const dlg = document.getElementById('dlg');
+function chipsHtml(ids, sel){
+  if(!ids.length) return '<span class="hist">Ce compte n’a pas de membres : ajoute-en dans « Comptes & personnes ».</span>';
+  return ids.map(id => { const on = sel.includes(id);
+    return `<button type="button" class="chip ${on?'on':''}" data-pid="${id}" style="${on?`background:${pCol(id)};border-color:${pCol(id)};color:#fff`:`border-color:${pCol(id)}66;color:${shade(pCol(id),.25)}`}">${esc(pNom(id))}</button>`; }).join('');
+}
+function openPrel(id){
+  const p = id ? db.prelevements.find(x=>x.id===id) : null;
+  const d = p || { nom:'', categorie:'', frequence:1, jour:'', attribution:membres(), compteId:db.compteActif, dateDebut:today(), dateFin:'', statut:'ok', contrat:'', tel:'', email:'', site:'', notes:'', montants:[], journal:[] };
+  let attr = [...d.attribution], cid = d.compteId;
+  const membresDe = c => { const cc = db.comptes.find(x=>x.id===c); return cc ? membres(cc) : []; };
+  dlg.innerHTML = `
+  <form id="fP" novalidate>
+    <div class="dhead"><h2>${p ? esc(p.nom) : 'Nouveau prélèvement'}</h2><button type="button" class="x" data-close>×</button></div>
+    <div class="dbody">
+      <div class="fgrid">
+        <div><label>Créancier *</label><input name="nom" required value="${esc(d.nom)}" placeholder="EDF, Free, MAAF…"></div>
+        <div><label>Catégorie</label><input name="categorie" list="cats" value="${esc(d.categorie)}"><datalist id="cats">${CATS.map(c=>`<option value="${c}">`).join('')}</datalist></div>
+        ${p ? `<div><label>Montant actuel</label><div class="row"><b style="font-family:var(--fh);font-size:24px;font-weight:600">${eur(montantActuel(p))}</b><button type="button" class="btn sm" id="chgMt">Changer le montant</button></div></div>`
+            : `<div><label>Montant (€) *</label><input name="montant" type="number" step="0.01" min="0" required></div>`}
+        <div><label>Fréquence</label><select name="frequence">${Object.entries(FREQ).map(([v,l])=>`<option value="${v}" ${Number(d.frequence)===Number(v)?'selected':''}>${l}</option>`).join('')}</select></div>
+        <div><label>Jour du prélèvement</label><input name="jour" type="number" min="1" max="31" value="${esc(d.jour)}"></div>
+        <div><label>Compte</label><select name="compteId">${db.comptes.map(c=>`<option value="${c.id}" ${c.id===cid?'selected':''}>${esc(c.nom)}</option>`).join('')}</select></div>
+        <div><label>Date de début *</label><input name="dateDebut" type="date" required value="${esc(d.dateDebut)}"></div>
+        <div><label>Date de fin <span style="opacity:.7">(facultatif · dernier prélèvement)</span></label><input name="dateFin" type="date" value="${esc(d.dateFin||'')}"></div>
+        <div class="full"><label>Attribué à <span style="opacity:.7">(plusieurs personnes = parts égales)</span></label><div class="chips" id="chipsP"></div></div>
+        <div><label>Statut</label><select name="statut">${Object.entries(STATUTS).map(([v,l])=>`<option value="${v}" ${d.statut===v?'selected':''}>${l}</option>`).join('')}</select></div>
+        <div><label>N° de contrat / client</label><input name="contrat" value="${esc(d.contrat)}"></div>
+        <div><label>Téléphone</label><input name="tel" value="${esc(d.tel)}"></div>
+        <div><label>E-mail</label><input name="email" value="${esc(d.email)}"></div>
+        <div class="full"><label>Site / espace client</label><input name="site" value="${esc(d.site)}" placeholder="https://"></div>
+        <div class="full"><label>Notes</label><textarea name="notes" rows="2">${esc(d.notes)}</textarea></div>
+      </div>
+      ${p ? `
+      <div class="section-title"><h3>Historique des montants</h3></div>
+      <div class="hist">${[...p.montants].sort((a,b)=>b.depuis.localeCompare(a.depuis)).map(m=>`<div>Depuis ${monthLabel(m.depuis)} : <b>${eur(m.montant)}</b></div>`).join('')}</div>
+      <div class="section-title journal"><h3>Journal</h3></div>
+      <div class="journal">
+        <div class="row" style="flex-wrap:nowrap"><input id="jTxt" placeholder="Appel, réclamation, hausse annoncée…"><button type="button" class="btn sm primary" id="jAdd">Ajouter</button></div>
+        <ul>${[...p.journal].sort((a,b)=>b.date.localeCompare(a.date)).map(j=>`<li><span class="d">${fmtDate(j.date)}</span><span class="t">${esc(j.texte)}</span><button type="button" class="del" data-jdel="${j.id}" title="Supprimer">×</button></li>`).join('') || '<li style="color:var(--muted)">Aucune entrée.</li>'}</ul>
+      </div>` : ''}
+    </div>
+    <div class="dfoot">
+      <div>${p ? `<button type="button" class="btn danger" id="delP">Supprimer</button>` : ''}</div>
+      <div class="row"><button type="button" class="btn" data-close>Annuler</button><button type="button" class="btn primary" id="saveP">Enregistrer</button></div>
+    </div>
+  </form>`;
+  if(!dlg.open) dlg.showModal();
+  const f = dlg.querySelector('#fP');
+  const drawChips = () => {
+    const box = dlg.querySelector('#chipsP'); box.innerHTML = chipsHtml(membresDe(cid), attr);
+    box.querySelectorAll('.chip').forEach(b => b.onclick = () => {
+      const pid = b.dataset.pid; attr = attr.includes(pid) ? attr.filter(x=>x!==pid) : [...attr, pid]; drawChips(); });
+  };
+  drawChips();
+  f.elements.compteId.onchange = e => { cid = e.target.value; const m = membresDe(cid); attr = attr.filter(x => m.includes(x)); if(!attr.length) attr = [...m]; drawChips(); };
+  const doSaveP = () => {
+    if(!checkForm(f)) return;
+    const fd = Object.fromEntries(new FormData(f));
+    if(fd.dateFin && fd.dateFin < fd.dateDebut){ f.elements.dateFin.style.borderColor='var(--bad)'; return toast('La date de fin doit être après la date de début', true); }
+    if(!attr.length) return toast('Choisis au moins une personne', true);
+    const data = { nom:fd.nom.trim(), categorie:fd.categorie.trim(), frequence:Number(fd.frequence), jour:fd.jour?Number(fd.jour):'',
+      attribution:attr, compteId:cid, dateDebut:fd.dateDebut, dateFin:fd.dateFin||'', statut:fd.statut, contrat:fd.contrat, tel:fd.tel, email:fd.email, site:fd.site, notes:fd.notes };
+    if(p){
+      const oldStart = startKey(p);
+      Object.assign(p, data);
+      const first = [...p.montants].sort((a,b)=>a.depuis.localeCompare(b.depuis))[0];
+      if(first && first.depuis === oldStart) first.depuis = startKey(p);
+    } else {
+      db.prelevements.push({ id:uid(), ...data, montants:[{ depuis:data.dateDebut.slice(0,7), montant:Number(fd.montant)||0 }], journal:[] });
+    }
+    if(cid !== db.compteActif) toast('Enregistré sur le compte « ' + db.comptes.find(c=>c.id===cid).nom + ' »');
+    else toast(p ? 'Fiche enregistrée' : 'Prélèvement ajouté');
+    save(); dlg.close(); render();
+  };
+  f.onsubmit = e => { e.preventDefault(); doSaveP(); };
+  dlg.querySelector('#saveP').onclick = doSaveP;
+  if(p){
+    confirm2(dlg.querySelector('#delP'), () => { db.prelevements = db.prelevements.filter(x=>x.id!==p.id); save(); dlg.close(); render(); toast('Prélèvement supprimé'); });
+    dlg.querySelector('#chgMt').onclick = () => openMontant(p);
+    dlg.querySelector('#jAdd').onclick = () => { const t = dlg.querySelector('#jTxt').value.trim(); if(!t) return; p.journal.push({ id:uid(), date:today(), texte:t }); save(); openPrel(p.id); };
+    dlg.querySelector('#jTxt').onkeydown = e => { if(e.key==='Enter'){ e.preventDefault(); dlg.querySelector('#jAdd').click(); } };
+    dlg.querySelectorAll('[data-jdel]').forEach(b => b.onclick = () => { p.journal = p.journal.filter(j=>j.id!==b.dataset.jdel); save(); openPrel(p.id); });
+  }
+}
+
+function openMontant(p){
+  const def = monthKey(new Date()) < startKey(p) ? startKey(p) : monthKey(new Date());
+  dlg.innerHTML = `
+  <form id="fM" novalidate>
+    <div class="dhead"><h2>Changer le montant · ${esc(p.nom)}</h2><button type="button" class="x" data-back>×</button></div>
+    <div class="dbody"><div class="fgrid">
+      <div><label>Nouveau montant (€)</label><input name="montant" type="number" step="0.01" min="0" required value="${montantActuel(p)}"></div>
+      <div><label>À partir du mois</label><input name="depuis" type="month" required min="${startKey(p)}" value="${def}"></div>
+      <div class="full hist">Les mois précédents gardent l’ancien montant : ton historique reste juste.</div>
+    </div></div>
+    <div class="dfoot"><div></div><div class="row"><button type="button" class="btn" data-back>Retour</button><button type="button" class="btn primary" id="saveM">Valider</button></div></div>
+  </form>`;
+  dlg.querySelectorAll('[data-back]').forEach(b => b.onclick = () => openPrel(p.id));
+  const fMf = dlg.querySelector('#fM');
+  const doSaveM = () => {
+    if(!checkForm(fMf)) return;
+    const fd = Object.fromEntries(new FormData(fMf));
+    const old = montantAt(p, fd.depuis);
+    p.montants = p.montants.filter(m => m.depuis !== fd.depuis);
+    p.montants.push({ depuis:fd.depuis, montant:Number(fd.montant)||0 });
+    p.journal.push({ id:uid(), date:today(), texte:`Montant changé : ${eur(old)} → ${eur(fd.montant)} à partir de ${monthLabel(fd.depuis)}` });
+    save(); openPrel(p.id); render();
+  };
+  fMf.onsubmit = e => { e.preventDefault(); doSaveM(); };
+  dlg.querySelector('#saveM').onclick = doSaveM;
+}
+
+/* ============ Versement ============ */
+function openVers(id){
+  const v = id ? db.versements.find(x=>x.id===id) : null;
+  const ids = idsCompte();
+  if(!ids.length) return toast('Ajoute d’abord des personnes à ce compte', true);
+  let who = v ? v.personne : ids[0];
+  const defDate = v ? v.date : (curMonth === monthKey(new Date()) ? today() : curMonth + '-01');
+  dlg.innerHTML = `
+  <form id="fV" novalidate>
+    <div class="dhead"><h2>${v ? 'Modifier le versement' : 'Nouveau versement'}</h2><button type="button" class="x" data-close>×</button></div>
+    <div class="dbody"><div class="fgrid">
+      <div class="full"><label>Qui a versé ? <span style="opacity:.7">· ${esc(compte().nom)}</span></label><div class="chips" id="chipsW"></div></div>
+      <div><label>Montant (€)</label><input name="montant" type="number" step="0.01" min="0" required value="${v ? v.montant : ''}"></div>
+      <div><label>Date</label><input name="date" type="date" required value="${defDate}"></div>
+      <div class="full"><label>Note</label><input name="note" value="${esc(v ? v.note : '')}" placeholder="Virement salaire, régularisation…"></div>
+      ${v ? '' : `<div class="full hist" id="hintV"></div>`}
+    </div></div>
+    <div class="dfoot"><div>${v ? `<button type="button" class="btn danger" id="delV">Supprimer</button>` : ''}</div>
+      <div class="row"><button type="button" class="btn" data-close>Annuler</button><button type="button" class="btn primary" id="saveV">Enregistrer</button></div></div>
+  </form>`;
+  dlg.showModal();
+  const f = dlg.querySelector('#fV');
+  const resteDe = () => { const k = f.elements.date.value.slice(0,7); if(!k) return 0; const r = resumeMois(k); return (r.du[who]||0) - (r.verse[who]||0); };
+  const hint = () => { const h = dlg.querySelector('#hintV'); if(!h) return; const k = f.elements.date.value.slice(0,7); if(!k) return;
+    h.innerHTML = `Pour ${monthLabel(k)}, ${esc(pNom(who))} doit encore <b>${eur(Math.max(0,resteDe()))}</b>.`; };
+  const suggest = () => { if(v) return; const s = Math.max(0, resteDe()); f.elements.montant.value = s ? s.toFixed(2) : ''; };
+  const drawW = () => { const box = dlg.querySelector('#chipsW'); box.innerHTML = chipsHtml(ids, [who]);
+    box.querySelectorAll('.chip').forEach(b => b.onclick = () => { who = b.dataset.pid; drawW(); suggest(); hint(); }); };
+  drawW(); suggest(); hint();
+  f.elements.date.onchange = () => { suggest(); hint(); };
+  const doSaveV = () => {
+    if(!checkForm(f)) return;
+    const fd = Object.fromEntries(new FormData(f));
+    const data = { personne:who, montant:Number(fd.montant)||0, date:fd.date, note:fd.note.trim(), compteId:v ? v.compteId : db.compteActif };
+    if(v) Object.assign(v, data); else db.versements.push({ id:uid(), ...data });
+    save(); dlg.close(); render(); toast('Versement enregistré');
+  };
+  f.onsubmit = e => { e.preventDefault(); doSaveV(); };
+  dlg.querySelector('#saveV').onclick = doSaveV;
+  if(v) confirm2(dlg.querySelector('#delV'), () => { db.versements = db.versements.filter(x=>x.id!==v.id); save(); dlg.close(); render(); toast('Versement supprimé'); });
+}
+
+/* ============ Comptes & personnes ============ */
+function usagePersonne(pid, cid){
+  return db.prelevements.some(p => (!cid || p.compteId===cid) && p.attribution.includes(pid))
+      || db.versements.some(v => (!cid || v.compteId===cid) && v.personne===pid);
+}
+function openGerer(){
+  dlg.innerHTML = `
+  <div class="dhead"><h2>Comptes & personnes</h2><button type="button" class="x" data-close>×</button></div>
+  <div class="dbody">
+    <div class="section-title" style="margin-top:0"><h3>Personnes</h3></div>
+    <div class="mgr">${db.personnes.map(p=>`
+      <div class="mrow">
+        <input data-pname="${p.id}" value="${esc(p.nom)}">
+        <div class="minis">${Object.entries(CARTES).map(([t,c])=>`<button type="button" class="mini c-${t} ${p.carte===t?'on':''}" data-pcarte="${p.id}|${t}" title="Carte ${c.label}"></button>`).join('')}</div>
+        <button type="button" class="btn sm danger" data-pdel="${p.id}">Supprimer</button>
+      </div>`).join('')}
+      <div class="mrow add"><input id="newP" placeholder="Nouvelle personne (prénom)"><div class="minis" id="newMinis">${Object.entries(CARTES).map(([t,c])=>`<button type="button" class="mini c-${t} ${newCarte===t?'on':''}" data-newcarte="${t}" title="Carte ${c.label}"></button>`).join('')}</div><button type="button" class="btn sm primary" id="addP">+ Ajouter</button></div>
+    </div>
+
+    <div class="section-title"><h3>Comptes</h3></div>
+    <div class="mgr">${db.comptes.map(c=>`
+      <div class="mrow compte">
+        <div class="row" style="flex-wrap:nowrap;width:100%">
+          <input data-cname="${c.id}" value="${esc(c.nom)}">
+          <button type="button" class="btn sm danger" data-cdel="${c.id}">Supprimer</button>
+        </div>
+        <div class="ribgrid">
+          <div><label>Banque</label><input data-cbanque="${c.id}" value="${esc(c.banque||'')}" placeholder="CIC, Revolut…"></div>
+          <div><label>IBAN ${c.iban ? (ibanValide(c.iban) ? '<span class="pos">· valide ✓</span>' : '<span class="neg">· à vérifier</span>') : ''}</label>
+            <div class="row" style="flex-wrap:nowrap;gap:6px"><input data-ciban="${c.id}" value="${esc(ibanFmt(c.iban||''))}" placeholder="FR76 …" style="font-family:monospace;letter-spacing:.5px">${c.iban ? `<button type="button" class="btn icon" data-copy="${ibanClean(c.iban)}" title="Copier l’IBAN">⧉</button>` : ''}</div></div>
+          <div><label>Note</label><input data-cnote="${c.id}" value="${esc(c.note||'')}" placeholder="Étape 1, reçoit les salaires…"></div>
+          ${!RIBS_().length ? `<div><label>Liste des RIB</label><div class="hist" style="padding-top:6px">Importe ton fichier de RIB avec le bouton ⤒ en haut.</div></div>` : ''}
+          <div ${!RIBS_().length ? 'hidden' : ''}><label>Remplir depuis la liste des RIB</label><select data-crib="${c.id}"><option value="">— Choisir un compte —</option>${RIBS_().map((r,i)=>`<option value="${i}" ${ibanClean(c.iban)===r.iban?'selected':''}>${esc(r.nom)} · ${esc(r.banque)}</option>`).join('')}</select></div>
+        </div>
+        <label style="margin:4px 0 -2px">Membres</label>
+        <div class="chips" data-cmembres="${c.id}">${db.personnes.length ? chipsHtml(db.personnes.map(p=>p.id), c.membres) : '<span class="hist">Crée d’abord une personne.</span>'}</div>
+      </div>`).join('')}
+      <div class="mrow add"><input id="newC" placeholder="Nouveau compte (ex. Compte épargne, Compte maison…)"><button type="button" class="btn sm primary" id="addC">+ Ajouter</button></div>
+      ${RIBS_().some(r => !db.comptes.some(c => ibanClean(c.iban)===r.iban)) ? `<div class="mrow add"><select id="newFromRib"><option value="">Créer un compte depuis la liste des RIB…</option>${RIBS_().map((r,i)=> db.comptes.some(c=>ibanClean(c.iban)===r.iban) ? '' : `<option value="${i}">${esc(r.nom)} · ${esc(r.banque)} · ${esc(r.note)}</option>`).join('')}</select><button type="button" class="btn sm primary" id="addFromRib">+ Créer</button></div>` : ''}
+    </div>
+    <div class="hist" style="margin-top:12px">Clique sur un prénom sous un compte pour l’ajouter ou le retirer des membres. Clique sur une mini-carte pour choisir la carte de la personne : rose, bleue, verte, black, gold ou platinum.</div>
+  </div>
+  <div class="dfoot"><div></div><button type="button" class="btn primary" data-close>Terminé</button></div>`;
+  if(!dlg.open) dlg.showModal();
+  const again = () => { save(); render(); openGerer(); };
+  dlg.querySelectorAll('[data-pname]').forEach(i => i.onchange = () => { const n = i.value.trim(); if(!n) return again(); pers(i.dataset.pname).nom = n; again(); });
+  dlg.querySelectorAll('[data-pcarte]').forEach(b => b.onclick = () => { const [pid, t] = b.dataset.pcarte.split('|'); const p = pers(pid); p.carte = t; p.couleur = CARTES[t].couleur; again(); });
+  dlg.querySelectorAll('[data-newcarte]').forEach(b => b.onclick = () => { newCarte = b.dataset.newcarte; dlg.querySelectorAll('[data-newcarte]').forEach(x => x.classList.toggle('on', x===b)); });
+  dlg.querySelectorAll('[data-pdel]').forEach(b => {
+    const pid = b.dataset.pdel;
+    if(usagePersonne(pid)) { b.onclick = () => toast(`${pNom(pid)} a des prélèvements ou versements : impossible de supprimer`, true, 3500); return; }
+    confirm2(b, () => { db.personnes = db.personnes.filter(p=>p.id!==pid); db.comptes.forEach(c => c.membres = c.membres.filter(x=>x!==pid)); again(); });
+  });
+  const addP = () => { const n = dlg.querySelector('#newP').value.trim(); if(!n) return;
+    db.personnes.push({ id:uid(), nom:n, carte:newCarte, couleur:CARTES[newCarte].couleur }); again(); toast(`${n} ajouté(e) avec une carte ${CARTES[newCarte].label}`); };
+  dlg.querySelector('#addP').onclick = addP;
+  dlg.querySelector('#newP').onkeydown = e => { if(e.key==='Enter'){ e.preventDefault(); addP(); } };
+
+  const cOf = id => db.comptes.find(c=>c.id===id);
+  dlg.querySelectorAll('[data-cbanque]').forEach(i => i.onchange = () => { cOf(i.dataset.cbanque).banque = i.value.trim(); again(); });
+  dlg.querySelectorAll('[data-cnote]').forEach(i => i.onchange = () => { cOf(i.dataset.cnote).note = i.value.trim(); again(); });
+  dlg.querySelectorAll('[data-ciban]').forEach(i => i.onchange = () => { const v = ibanClean(i.value); cOf(i.dataset.ciban).iban = v; again();
+    if(v && !ibanValide(v)) toast('Cet IBAN ne semble pas valide, vérifie-le', true, 3500); });
+  dlg.querySelectorAll('[data-crib]').forEach(sel => sel.onchange = () => { if(sel.value==='') return; const r = RIBS_()[sel.value], c = cOf(sel.dataset.crib);
+    c.banque = r.banque; c.iban = r.iban; if(!c.note) c.note = r.note; again(); toast(`RIB « ${r.nom} » ajouté à « ${c.nom} »`); });
+  const fr = dlg.querySelector('#addFromRib');
+  if(fr) fr.onclick = () => { const v = dlg.querySelector('#newFromRib').value; if(v==='') return toast('Choisis un compte dans la liste', true);
+    const r = RIBS_()[v]; const c = { id:uid(), nom:r.nom, banque:r.banque, iban:r.iban, note:r.note, membres:[] }; db.comptes.push(c); again();
+    toast(`Compte « ${r.nom} » créé : choisis ses membres`); };
+  dlg.querySelectorAll('[data-cname]').forEach(i => i.onchange = () => { const n = i.value.trim(); if(!n) return again(); db.comptes.find(c=>c.id===i.dataset.cname).nom = n; again(); });
+  dlg.querySelectorAll('[data-cmembres]').forEach(box => {
+    const c = db.comptes.find(x=>x.id===box.dataset.cmembres);
+    box.querySelectorAll('.chip').forEach(b => b.onclick = () => {
+      const pid = b.dataset.pid;
+      if(c.membres.includes(pid)){
+        if(usagePersonne(pid, c.id)) return toast(`${pNom(pid)} a des prélèvements ou versements sur « ${c.nom} » : impossible de le retirer`, true, 3500);
+        c.membres = c.membres.filter(x=>x!==pid);
+      } else c.membres.push(pid);
+      again();
+    });
+  });
+  dlg.querySelectorAll('[data-cdel]').forEach(b => {
+    const cid = b.dataset.cdel;
+    if(db.comptes.length === 1){ b.onclick = () => toast('Il faut garder au moins un compte', true); return; }
+    if(prelevsCompte(cid).length || versCompte(cid).length){ b.onclick = () => toast('Ce compte contient des prélèvements ou versements : déplace-les ou supprime-les d’abord', true, 3800); return; }
+    confirm2(b, () => { db.comptes = db.comptes.filter(c=>c.id!==cid); if(db.compteActif===cid) db.compteActif = db.comptes[0].id; again(); });
+  });
+  const addC = () => { const n = dlg.querySelector('#newC').value.trim(); if(!n) return;
+    const c = { id:uid(), nom:n, membres:db.personnes.map(p=>p.id) }; db.comptes.push(c); db.compteActif = c.id; again(); toast(`Compte « ${n} » créé`); };
+  dlg.querySelector('#addC').onclick = addC;
+  dlg.querySelector('#newC').onkeydown = e => { if(e.key==='Enter'){ e.preventDefault(); addC(); } };
+}
+
+/* ============ Événements ============ */
+document.getElementById('nav').onclick = e => { const t = e.target.closest('.tab'); if(t){ view = t.dataset.view; render(); } };
+document.getElementById('compteSel').onchange = e => { db.compteActif = e.target.value; filterAttr = 'all'; filterVers = 'all'; save(); render(); };
+document.getElementById('btnGerer').onclick = openGerer;
+main.addEventListener('click', e => {
+  const a = e.target.closest('[data-act]'), o = e.target.closest('[data-open]'), vv = e.target.closest('[data-vers]'), m = e.target.closest('[data-month]');
+  if(a){ const act = a.dataset.act;
+    if(act==='prev') curMonth = addMonths(curMonth,-1);
+    if(act==='next') curMonth = addMonths(curMonth,1);
+    if(act==='today') curMonth = monthKey(new Date());
+    if(act==='yprev') curYear--;
+    if(act==='ynext') curYear++;
+    if(act==='ytoday') curYear = new Date().getFullYear();
+    if(act==='newPrel') return openPrel();
+    if(act==='newVers') return openVers();
+    if(act==='gerer') return openGerer();
+    return render(); }
+  const vf = e.target.closest('[data-vfait]'), cc = e.target.closest('[data-compte]');
+  if(vf){ const [pid, cid, montant] = vf.dataset.vfait.split('|');
+    const date = curMonth === monthKey(new Date()) ? today() : curMonth + '-01';
+    db.versements.push({ id:uid(), personne:pid, compteId:cid, montant:Number(montant), date, note:'Virement fait (synthèse)' });
+    save(); render(); return toast(`${pNom(pid)} : ${eur(montant)} versé sur « ${db.comptes.find(c=>c.id===cid).nom} »`); }
+  if(cc){ db.compteActif = cc.dataset.compte; view = 'mois'; save(); return render(); }
+  if(o) return openPrel(o.dataset.open);
+  if(vv) return openVers(vv.dataset.vers);
+  if(m){ curMonth = m.dataset.month; view = 'mois'; render(); }
+});
+dlg.addEventListener('click', e => { if(e.target.closest('[data-close]')) { dlg.close(); render(); } });
+document.addEventListener('click', e => { const c = e.target.closest('[data-copy]'); if(c){ e.stopPropagation(); copier(c.dataset.copy); } }, true);
+
+document.getElementById('btnExport').onclick = () => {
+  const blob = new Blob([JSON.stringify(db,null,2)], { type:'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `prelevements-${today()}.json`; a.click();
+};
+document.getElementById('btnImport').onclick = () => document.getElementById('fileImport').click();
+document.getElementById('fileImport').onchange = e => {
+  const file = e.target.files[0]; if(!file) return;
+  file.text().then(t => { try{ const d = JSON.parse(t);
+    if(Array.isArray(d.ribs) && !d.prelevements){
+      let n = 0; d.ribs.forEach(r => { const i = ibanClean(r.iban); if(i && !db.ribs.some(x => ibanClean(x.iban) === i)){ db.ribs.push({ ...r, iban:i }); n++; } });
+      save(); render(); return toast(n + ' RIB ajouté(s) à ta liste'); }
+    if(!d.prelevements) throw 0;
+    const keepRibs = db.ribs; db = migrate(d); if(!db.ribs.length) db.ribs = keepRibs; save(); render(); toast('Données importées'); }
+    catch(err){ toast('Fichier non reconnu', true); } e.target.value=''; });
+};
+
+/* ============ Connexion ============ */
+const ALLOWED = 'grazioso.julien@gmail.com';
+function showLogin(msg){
+  document.body.classList.add('locked');
+  document.getElementById('login').innerHTML = `
+    <div class="login-card">
+      <svg width="64" height="64" viewBox="0 0 40 40" fill="none" stroke="#c47a5a" stroke-width="1.3" stroke-linecap="round"><circle cx="20" cy="22" r="7"/><path d="M20 9v4M20 31v4M7 22h4M29 22h4M10.8 12.8l2.8 2.8M26.4 28.4l2.8 2.8M29.2 12.8l-2.8 2.8M13.6 28.4l-2.8 2.8"/><path d="M4 36c5-3 10-3 16 0s11 3 16 0" stroke="#6b9395"/></svg>
+      <h1>Prélèvements</h1>
+      <p class="hist">Espace privé · accès réservé</p>
+      ${msg ? `<p class="login-err">${msg}</p>` : ''}
+      ${window.cloud ? `<button class="btn primary gbtn" id="btnLogin"><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#fff" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/></svg>Se connecter avec Google</button>`
+        : '<p class="hist">Chargement…</p>'}
+    </div>`;
+  const b = document.getElementById('btnLogin'); if(b) b.onclick = () => window.cloud.login().catch(e => showLogin('Connexion impossible : ' + (e.code || e.message)));
+}
+window.onAuth = async user => {
+  if(!user){ USER = null; return showLogin(); }
+  if((user.email || '').toLowerCase() !== ALLOWED){ await window.cloud.logout(); return showLogin(`Le compte ${esc(user.email)} n’a pas accès à cette appli.`); }
+  USER = user;
+  db = loadLocal();
+  document.body.classList.remove('locked');
+  document.getElementById('login').innerHTML = '';
+  document.getElementById('who').innerHTML = user.photoURL ? `<img src="${user.photoURL}" alt="" referrerpolicy="no-referrer">` : esc(user.email[0].toUpperCase());
+  render();
+  window.cloud.subscribe(remote => {
+    if(remote === null){ save(); return; }
+    if(dirty) return;                          // modifs locales pas encore envoyées : elles priment
+    if(remote === JSON.stringify(db)) return setSync('ok');
+    db = migrate(JSON.parse(remote));
+    try{ localStorage.setItem(cacheKey(), JSON.stringify(db)); }catch(e){}
+    if(!dlg.open) render();
+    setSync('ok');
+  });
+};
+document.getElementById('who').onclick = () => {
+  if(!USER) return;
+  dlg.innerHTML = `<div class="dhead"><h2>Mon compte</h2><button type="button" class="x" data-close>×</button></div>
+    <div class="dbody"><p>Connecté avec <b>${esc(USER.email)}</b>.</p><p class="hist">Tes données sont sauvegardées dans le cloud et synchronisées entre tes appareils. Elles restent aussi en cache sur cet appareil pour fonctionner sans connexion.</p></div>
+    <div class="dfoot"><div></div><div class="row"><button type="button" class="btn" data-close>Fermer</button><button type="button" class="btn danger" id="btnLogout">Se déconnecter</button></div></div>`;
+  dlg.showModal();
+  dlg.querySelector('#btnLogout').onclick = () => { dlg.close(); window.cloud.logout(); };
+};
+showLogin();
+</script>
+
+<script type="module">
+/* ============ Firebase : connexion Google + sauvegarde cloud ============ */
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAB9TgIGkES5-mSA1TnC9Ply-T1f1hc8bw",
+  authDomain: "prelevements-869b7.firebaseapp.com",
+  projectId: "prelevements-869b7",
+  storageBucket: "prelevements-869b7.firebasestorage.app",
+  messagingSenderId: "407741159443",
+  appId: "1:407741159443:web:73344b3043572d182107e6"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const fs = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+const provider = new GoogleAuthProvider();
+provider.setCustomParameters({ login_hint: 'grazioso.julien@gmail.com', prompt: 'select_account' });
+let unsub = null, ref = null;
+
+window.cloud = {
+  login: () => signInWithPopup(auth, provider).catch(e => {
+    if(['auth/popup-blocked','auth/operation-not-supported-in-this-environment','auth/cancelled-popup-request'].includes(e.code)) return signInWithRedirect(auth, provider);
+    throw e; }),
+  logout: () => { if(unsub){ unsub(); unsub = null; } return signOut(auth); },
+  subscribe(cb){
+    if(unsub) unsub();
+    unsub = onSnapshot(ref, { includeMetadataChanges:true }, snap => {
+      if(snap.metadata.hasPendingWrites) return setSync(navigator.onLine ? 'pending' : 'offline');
+      if(!snap.exists()) return snap.metadata.fromCache ? null : cb(null);
+      setSync(snap.metadata.fromCache && !navigator.onLine ? 'offline' : 'ok');
+      cb(snap.data().data);
+    }, err => { console.error(err); setSync('error'); toast('Synchro refusée : ' + err.code, true, 6000); });
+  },
+  push(json){
+    setDoc(ref, { data: json, updatedAt: serverTimestamp(), app: 'prelevements' })
+      .catch(err => { console.error(err); setSync('error'); toast('Sauvegarde cloud impossible : ' + err.code, true, 6000); });
+    if(!navigator.onLine) setSync('offline');
+  }
+};
+window.addEventListener('online', () => setSync('pending'));
+window.addEventListener('offline', () => setSync('offline'));
+onAuthStateChanged(auth, user => { ref = user ? doc(fs, 'users', user.uid) : null; window.onAuth(user); });
+</script>
+</body>
+</html>
