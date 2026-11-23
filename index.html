@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Prélèvements · Compte commun</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1116,6 +1117,21 @@ document.getElementById('fileImport').onchange = e => {
     const keepRibs = db.ribs; db = migrate(d); if(!db.ribs.length) db.ribs = keepRibs; save(); render(); toast('Données importées'); }
     catch(err){ toast('Fichier non reconnu', true); } e.target.value=''; });
 };
+
+/* ============ Mise à jour automatique ============ */
+const APP_VERSION = '2026-11-23-3';
+async function verifierMaj(){
+  try{
+    const r = await fetch(location.pathname + '?nc=' + Date.now(), { cache:'no-store' });
+    const m = (await r.text()).match(/APP_VERSION = '([^']+)'/);
+    if(m && m[1] !== APP_VERSION){
+      const u = new URL(location.href); if(u.searchParams.get('v') === m[1]) return;   // évite une boucle
+      u.searchParams.set('v', m[1]); location.replace(u.toString());
+    }
+  }catch(e){}
+}
+verifierMaj();
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') verifierMaj(); });
 
 /* ============ Connexion ============ */
 const ALLOWED = 'grazioso.julien@gmail.com';
