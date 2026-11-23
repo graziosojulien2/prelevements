@@ -761,7 +761,7 @@ function bankCard(x){
 function renderSynthese(){
   const list = etatPersonnes(curMonth);
   const ids = list.filter(x => x.lignes.length).map(x => x.id);
-  const parCompte = db.comptes.map(c => ({ c, r:resumeMois(curMonth, c.id) }));
+  const parCompte = db.comptes.map(c => ({ c, r:resumeMois(curMonth, c.id) })).filter(x => x.r.lignes.length > 0);   // on masque les comptes sans prélèvement ce mois-ci
   const totalMois = parCompte.reduce((s,x)=>s+x.r.total,0);
   const cell = (du, v) => { if(Math.abs(du)<0.005 && Math.abs(v)<0.005) return '<span style="color:var(--muted)">—</span>';
     const re = du - v; return `${eur(du)}<div class="mini-l">${re>0.004 ? `<span class="neg">reste ${eur(re)}</span>` : re<-0.004 ? `<span class="pos">+${eur(-re)}</span>` : '<span class="pos">✓ versé</span>'}</div>`; };
@@ -793,7 +793,7 @@ function renderSynthese(){
   <div class="card" style="overflow-x:auto">
     <table>
       <thead><tr><th>Compte</th><th class="r">Total du mois</th>${ids.map(id=>`<th class="r" style="color:${shade(pCol(id),.1)}">${esc(pNom(id))}</th>`).join('')}</tr></thead>
-      <tbody>${parCompte.map(({c,r}) => `<tr class="click" data-compte="${c.id}">
+      <tbody>${!parCompte.length ? `<tr><td colspan="${2+ids.length}" class="empty" style="padding:20px">Aucun prélèvement ce mois-ci.</td></tr>` : ''}${parCompte.map(({c,r}) => `<tr class="click" data-compte="${c.id}">
         <td><b>${esc(c.nom)}</b><div class="mini-l" style="color:var(--muted)">${r.lignes.length} prélèvement(s)${c.note ? ' · '+esc(c.note) : ''}</div>${ibanTag(c)}</td>
         <td class="r"><b>${eur(r.total)}</b></td>
         ${ids.map(id => `<td class="r">${cell(r.du[id]||0, r.verse[id]||0)}</td>`).join('')}</tr>`).join('')}</tbody>
@@ -1119,7 +1119,7 @@ document.getElementById('fileImport').onchange = e => {
 };
 
 /* ============ Mise à jour automatique ============ */
-const APP_VERSION = '2026-11-23-3';
+const APP_VERSION = '2026-11-23-4';
 async function verifierMaj(){
   try{
     const r = await fetch(location.pathname + '?nc=' + Date.now(), { cache:'no-store' });
