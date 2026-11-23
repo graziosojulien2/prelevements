@@ -117,7 +117,9 @@ dialog::backdrop{background:rgba(74,59,49,.35);backdrop-filter:blur(3px)}
 .deco{display:block;margin:40px auto 0;opacity:.45}
 .btn.icon{width:34px;height:34px;padding:0;font-size:16px;display:inline-flex;align-items:center;justify-content:center}
 nav{margin-left:4px!important}
-.tab{padding:7px 11px!important}
+.tab{padding:7px 9px!important;font-size:13.5px!important}
+header{gap:10px!important;padding:14px 20px!important}
+.compte-sel{max-width:200px!important;font-size:18px!important}
 header h1{font-size:26px!important}
 .emv{flex:none}
 .compte-box{display:flex;align-items:center;gap:8px}
@@ -194,6 +196,18 @@ body.locked header,body.locked main,body.locked .deco{display:none}
 .login-card h1{font-size:44px;margin:8px 0 2px;font-style:italic;font-weight:500}
 .login-card .gbtn{margin-top:22px;display:inline-flex;align-items:center;gap:10px;padding:11px 22px;font-size:15px}
 .login-err{color:var(--bad);font-size:13.5px;background:#f8e7e2;padding:10px 14px;border-radius:12px}
+.filters select{width:auto;border-radius:30px;padding:7px 14px}
+.filters{margin-top:-8px}
+.sttotal{display:flex;justify-content:space-between;align-items:center;padding:16px 22px;margin-bottom:14px}
+.sttotal .lbl,.stbox .lbl{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:2px}
+.sttotal .num{font-size:32px}
+.sttotal small{font-family:var(--fb);font-size:13px;color:var(--muted);font-weight:400}
+.stgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:22px}
+.stbox{padding:14px 18px}
+.strow{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+.strow:last-child{border-bottom:none}
+.strow b{font-weight:500;white-space:nowrap}
+.ctag{display:inline-block;font-size:10.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--amber2);background:#f6e9de;padding:3px 10px;border-radius:20px;margin-bottom:8px}
 @media(max-width:800px){.kpis{grid-template-columns:1fr}.fgrid{grid-template-columns:1fr}main{padding:16px}header{padding:12px 16px}header h1{font-size:24px}}
 </style>
 </head>
@@ -385,6 +399,7 @@ function render(){
   renderCompteSel();
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.view===view));
   if(view === 'synthese') return renderSynthese();
+  if(view === 'prel' && prelScope === 'all') return renderPrel();
   if(!idsCompte().length){
     main.innerHTML = `<div class="card empty">Ce compte n’a encore aucun membre.<br><button class="btn primary" style="margin-top:14px;font-style:normal" data-act="gerer">Ajouter des personnes au compte</button></div>`;
     return;
@@ -458,30 +473,80 @@ function versTable(list){
     <td>${badge(v.personne)}</td><td>${esc(v.note)}</td><td class="r"><b>${eur(v.montant)}</b></td></tr>`).join('')}</tbody></table>`;
 }
 
-function renderPrel(){
-  const ids = idsCompte();
-  if(filterAttr!=='all' && filterAttr!=='shared' && !ids.includes(filterAttr)) filterAttr = 'all';
+let prelScope = 'compte', filterCompte = 'all', filterCat = 'all', filterStatut = 'actifs';
+const mensuel = p => termine(p) ? 0 : montantActuel(p) / (Number(p.frequence)||1);
+const compteNom = id => db.comptes.find(c => c.id === id)?.nom || '?';
+const statutTxt = p => termine(p) ? 'Terminé' : (STATUTS[p.statut] || 'Actif');
+
+function listePrelFiltree(){
+  const all = prelScope === 'all';
   const q = filterSearch.toLowerCase();
-  const list = prelevsCompte().filter(p =>
+  return (all ? db.prelevements : prelevsCompte()).filter(p =>
+    (!all || filterCompte==='all' || p.compteId===filterCompte) &&
     (filterAttr==='all' || (filterAttr==='shared' ? p.attribution.length>1 : p.attribution.includes(filterAttr))) &&
-    (!q || (p.nom+' '+p.categorie+' '+(p.contrat||'')+' '+(p.notes||'')).toLowerCase().includes(q))
-  ).sort((a,b)=> (termine(a)-termine(b)) || a.nom.localeCompare(b.nom));
-  const totalMensuel = list.filter(p=>!termine(p)).reduce((s,p)=> s + montantActuel(p)/(Number(p.frequence)||1), 0);
+    (filterCat==='all' || (p.categorie||'Sans catégorie')===filterCat) &&
+    (filterStatut==='tous' || (filterStatut==='actifs' ? !termine(p) : filterStatut==='termines' ? termine(p) : (!termine(p) && p.statut===filterStatut))) &&
+    (!q || (p.nom+' '+p.categorie+' '+(p.contrat||'')+' '+(p.notes||'')+' '+compteNom(p.compteId)).toLowerCase().includes(q))
+  ).sort((a,b)=> (termine(a)-termine(b)) || (all ? compteNom(a.compteId).localeCompare(compteNom(b.compteId)) : 0) || a.nom.localeCompare(b.nom));
+}
+function sousTotaux(list){
+  const parCompte = {}, parPers = {}, parCat = {};
+  list.forEach(p => {
+    const m = mensuel(p); if(!m) return;
+    parCompte[p.compteId] = (parCompte[p.compteId]||0) + m;
+    const cat = p.categorie || 'Sans catégorie'; parCat[cat] = (parCat[cat]||0) + m;
+    const n = p.attribution.length || 1; p.attribution.forEach(id => parPers[id] = (parPers[id]||0) + m/n);
+  });
+  const tri = o => Object.entries(o).sort((a,b)=>b[1]-a[1]);
+  return { compte:tri(parCompte), pers:tri(parPers), cat:tri(parCat), total:list.reduce((s,p)=>s+mensuel(p),0) };
+}
+
+function renderPrel(){
+  const all = prelScope === 'all';
+  const ids = all ? db.personnes.map(p=>p.id) : idsCompte();
+  if(filterAttr!=='all' && filterAttr!=='shared' && !ids.includes(filterAttr)) filterAttr = 'all';
+  const source = all ? db.prelevements : prelevsCompte();
+  const cats = [...new Set(source.map(p => p.categorie || 'Sans catégorie'))].sort();
+  if(filterCat!=='all' && !cats.includes(filterCat)) filterCat = 'all';
+  const list = listePrelFiltree();
+  const st = sousTotaux(list);
+  const bloc = (titre, rows, label, color) => `<div class="card stbox"><div class="lbl">${titre}</div>
+    ${rows.length ? rows.map(([k,v]) => `<div class="strow"><span>${color ? `<span class="dot" style="background:${color(k)}"></span>` : ''}${esc(label(k))}</span><b>${eur(v)}</b></div>`).join('') : '<div class="hist">—</div>'}</div>`;
   main.innerHTML = `
   <div class="toolbar">
+    <div class="seg" id="segScope">
+      ${segBtn('compte','Ce compte',!all,'var(--amber)')}
+      ${segBtn('all','Tous les comptes',all,'var(--amber)')}
+    </div>
+    <div class="spacer"></div>
+    <button class="btn sm" id="expXlsx" title="Exporter la liste affichée en Excel">⤓ Excel</button>
+    <button class="btn sm" id="expPdf" title="Exporter la liste affichée en PDF">⤓ PDF</button>
+    <button class="btn primary" data-act="newPrel">+ Nouveau prélèvement</button>
+  </div>
+  <div class="toolbar filters">
     <input id="search" placeholder="Rechercher…" value="${esc(filterSearch)}">
+    ${all ? `<select id="fCompte"><option value="all">Tous les comptes</option>${db.comptes.map(c=>`<option value="${c.id}" ${filterCompte===c.id?'selected':''}>${esc(c.nom)}</option>`).join('')}</select>` : ''}
+    <select id="fCat"><option value="all">Toutes catégories</option>${cats.map(c=>`<option ${filterCat===c?'selected':''}>${esc(c)}</option>`).join('')}</select>
+    <select id="fStatut">${[['actifs','Actifs'],['tous','Actifs et terminés'],['termines','Terminés'],['renego','À renégocier'],['resil','À résilier']].map(([v,l])=>`<option value="${v}" ${filterStatut===v?'selected':''}>${l}</option>`).join('')}</select>
     <div class="seg" id="segAttr">
       ${segBtn('all','Tous',filterAttr==='all','var(--text)')}
       ${ids.map(id=>segBtn(id,pNom(id),filterAttr===id,pCol(id))).join('')}
       ${segBtn('shared','Partagés',filterAttr==='shared','var(--both)')}
     </div>
-    <div class="spacer"></div>
-    <span style="color:var(--muted)">${list.length} fiche(s) · ≈ ${eur(totalMensuel)}/mois</span>
-    <button class="btn primary" data-act="newPrel">+ Nouveau prélèvement</button>
+  </div>
+  <div class="sttotal card">
+    <div><div class="lbl">${list.length} prélèvement(s) affiché(s)</div><div class="num">${eur(st.total)} <small>/ mois</small></div></div>
+    <div style="text-align:right"><div class="lbl">Soit par an</div><div class="num">${eur(st.total*12)}</div></div>
+  </div>
+  <div class="stgrid">
+    ${all ? bloc('Par compte', st.compte, compteNom) : ''}
+    ${bloc('Par personne', st.pers, pNom, pCol)}
+    ${bloc('Par catégorie', st.cat, k => k)}
   </div>
   ${list.length ? `<div class="grid">${list.map(p=>{
     const nx = prochaine(p), fini = termine(p);
     return `<div class="card pcard${fini?' fini':''}" data-open="${p.id}">
+      ${all ? `<div class="ctag">${esc(compteNom(p.compteId))}</div>` : ''}
       <div class="row" style="justify-content:space-between;align-items:flex-start">
         <div><h3>${esc(p.nom)}</h3><div class="cat">${esc(p.categorie)}</div></div>
         ${fini ? '<span class="st">Terminé</span>' : p.statut && p.statut!=='ok' ? `<span class="st ${p.statut}">${STATUTS[p.statut]}</span>` : ''}
@@ -490,9 +555,79 @@ function renderPrel(){
       <div class="meta"><span>${badges(p)}</span>
         <span>${fini ? 'Fini en '+monthShort(p.dateFin.slice(0,7)) : (nx ? 'Prochain : '+monthShort(nx) : '') + (p.dateFin && !fini ? ' · fin '+monthShort(p.dateFin.slice(0,7)) : '')}</span></div>
     </div>`;}).join('')}</div>`
-  : `<div class="card empty">${prelevsCompte().length ? 'Aucun résultat.' : 'Aucun prélèvement sur ce compte. Ajoute le premier avec « + Nouveau prélèvement ».'}</div>`}`;
+  : `<div class="card empty">${source.length ? 'Aucun prélèvement ne correspond aux filtres.' : 'Aucun prélèvement pour l’instant. Ajoute le premier avec « + Nouveau prélèvement ».'}</div>`}`;
   document.getElementById('search').oninput = e => { filterSearch = e.target.value; renderPrel(); const n=document.getElementById('search'); n.focus(); n.setSelectionRange(n.value.length,n.value.length); };
   document.querySelectorAll('#segAttr button').forEach(b => b.onclick = () => { filterAttr = b.dataset.v; renderPrel(); });
+  document.querySelectorAll('#segScope button').forEach(b => b.onclick = () => { prelScope = b.dataset.v; renderPrel(); });
+  const fc = document.getElementById('fCompte'); if(fc) fc.onchange = e => { filterCompte = e.target.value; renderPrel(); };
+  document.getElementById('fCat').onchange = e => { filterCat = e.target.value; renderPrel(); };
+  document.getElementById('fStatut').onchange = e => { filterStatut = e.target.value; renderPrel(); };
+  document.getElementById('expXlsx').onclick = () => exportPrel('xlsx');
+  document.getElementById('expPdf').onclick = () => exportPrel('pdf');
+}
+
+/* ============ Export Excel / PDF ============ */
+function chargerScript(src){ return new Promise((ok, ko) => { if(document.querySelector(`script[src="${src}"]`)) return ok();
+  const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => ko(new Error('chargement')); document.head.appendChild(s); }); }
+function lignesExport(list){
+  return list.map(p => ({
+    'Créancier': p.nom, 'Compte': compteNom(p.compteId), 'Catégorie': p.categorie || '',
+    'Pour': p.attribution.map(pNom).join(' + '), 'Montant (€)': Math.round(montantActuel(p)*100)/100,
+    'Fréquence': FREQ[p.frequence], 'Jour': p.jour || '', 'Équivalent mensuel (€)': Math.round(mensuel(p)*100)/100,
+    'Début': fmtDate(p.dateDebut), 'Fin': fmtDate(p.dateFin), 'Prochain': (!termine(p) && prochaine(p)) ? monthLabel(prochaine(p)) : '',
+    'Statut': statutTxt(p), 'N° contrat': p.contrat || '' }));
+}
+function titreExport(){
+  const parts = [prelScope==='all' ? (filterCompte==='all' ? 'Tous les comptes' : compteNom(filterCompte)) : compte().nom];
+  if(filterCat!=='all') parts.push(filterCat);
+  if(filterAttr==='shared') parts.push('Partagés'); else if(filterAttr!=='all') parts.push(pNom(filterAttr));
+  parts.push({actifs:'Actifs',tous:'Actifs et terminés',termines:'Terminés',renego:'À renégocier',resil:'À résilier'}[filterStatut]);
+  return parts.join(' · ');
+}
+async function exportPrel(fmt){
+  const list = listePrelFiltree();
+  if(!list.length) return toast('Aucun prélèvement à exporter', true);
+  const st = sousTotaux(list), rows = lignesExport(list), nomFichier = `prelevements-${today()}`;
+  try{
+    if(fmt === 'xlsx'){
+      await chargerScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const n = rows.length;
+      XLSX.utils.sheet_add_aoa(ws, [[], ['TOTAL', '', '', '', '', '', '', { t:'n', f:`SUM(H2:H${n+1})` }], ['Soit par an', '', '', '', '', '', '', { t:'n', f:`H${n+3}*12` }]], { origin:-1 });
+      ws['!cols'] = [24,22,16,22,12,13,6,20,11,11,15,14,16].map(w => ({ wch:w }));
+      XLSX.utils.book_append_sheet(wb, ws, 'Prélèvements');
+      const stRows = [['Filtre', titreExport()], [], ['Par compte', 'Mensuel (€)', 'Annuel (€)'], ...st.compte.map(([k,v]) => [compteNom(k), +v.toFixed(2), +(v*12).toFixed(2)]),
+        [], ['Par personne', 'Mensuel (€)', 'Annuel (€)'], ...st.pers.map(([k,v]) => [pNom(k), +v.toFixed(2), +(v*12).toFixed(2)]),
+        [], ['Par catégorie', 'Mensuel (€)', 'Annuel (€)'], ...st.cat.map(([k,v]) => [k, +v.toFixed(2), +(v*12).toFixed(2)]),
+        [], ['TOTAL', +st.total.toFixed(2), +(st.total*12).toFixed(2)]];
+      const ws2 = XLSX.utils.aoa_to_sheet(stRows); ws2['!cols'] = [{wch:26},{wch:14},{wch:14}];
+      XLSX.utils.book_append_sheet(wb, ws2, 'Sous-totaux');
+      XLSX.writeFile(wb, nomFichier + '.xlsx');
+      toast('Export Excel téléchargé');
+    } else {
+      await chargerScript('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js');
+      await chargerScript('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js');
+      const { jsPDF } = window.jspdf; const pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+      const e2 = n => (Number(n)||0).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}).replace(/ | /g,' ') + ' €';
+      pdf.setFont('helvetica','bold'); pdf.setFontSize(18); pdf.setTextColor(74,59,49); pdf.text('Prélèvements', 14, 16);
+      pdf.setFont('helvetica','normal'); pdf.setFontSize(10); pdf.setTextColor(160,143,128);
+      pdf.text(`${titreExport()}  ·  édité le ${new Date().toLocaleDateString('fr-FR')}`, 14, 22);
+      pdf.autoTable({ startY:27, head:[['Créancier','Compte','Catégorie','Pour','Montant','Fréquence','Jour','Mensuel','Prochain','Statut']],
+        body: list.map(p => [p.nom, compteNom(p.compteId), p.categorie||'', p.attribution.map(pNom).join(' + '), e2(montantActuel(p)), FREQ[p.frequence], p.jour||'', e2(mensuel(p)),
+          (!termine(p) && prochaine(p)) ? monthShort(prochaine(p)) : '', statutTxt(p)]),
+        foot:[['Total', '', '', '', '', '', '', e2(st.total), 'par an', e2(st.total*12)]],
+        styles:{ fontSize:8.5, cellPadding:2, textColor:[74,59,49] }, headStyles:{ fillColor:[196,122,90], textColor:255 }, footStyles:{ fillColor:[245,237,226], textColor:[74,59,49], fontStyle:'bold' },
+        alternateRowStyles:{ fillColor:[251,247,241] }, columnStyles:{ 4:{halign:'right'}, 7:{halign:'right'} } });
+      let y = pdf.lastAutoTable.finalY + 10;
+      const blocs = [['Par compte', st.compte.map(([k,v])=>[compteNom(k),e2(v),e2(v*12)])], ['Par personne', st.pers.map(([k,v])=>[pNom(k),e2(v),e2(v*12)])], ['Par catégorie', st.cat.map(([k,v])=>[k,e2(v),e2(v*12)])]];
+      if(y > 165){ pdf.addPage(); y = 16; }
+      blocs.forEach(([t, body], i) => pdf.autoTable({ startY:y, margin:{ left:14 + i*92 }, tableWidth:86, head:[[t,'Mensuel','Annuel']], body,
+        styles:{ fontSize:8.5, cellPadding:1.8, textColor:[74,59,49] }, headStyles:{ fillColor:[107,147,149], textColor:255 }, columnStyles:{ 1:{halign:'right'}, 2:{halign:'right'} } }));
+      pdf.save(nomFichier + '.pdf');
+      toast('Export PDF téléchargé');
+    }
+  }catch(err){ console.error(err); toast('Export impossible : vérifie ta connexion internet', true, 4000); }
 }
 
 function renderVers(){
