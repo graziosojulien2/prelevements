@@ -209,6 +209,24 @@ body.locked header,body.locked main,body.locked .deco{display:none}
 .strow:last-child{border-bottom:none}
 .strow b{font-weight:500;white-space:nowrap}
 .ctag{display:inline-block;font-size:10.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--amber2);background:#f6e9de;padding:3px 10px;border-radius:20px;margin-bottom:8px}
+.ibgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:20px}
+.ibcard{position:relative;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:22px 24px 18px;box-shadow:var(--shadow);transition:transform .25s,box-shadow .25s}
+.ibcard:hover{transform:translateY(-2px);box-shadow:0 16px 36px -16px rgba(120,80,50,.35)}
+.ibcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--bk)}
+.ibcard::after{content:"";position:absolute;right:-50px;top:-50px;width:150px;height:150px;border-radius:50%;background:var(--bk);opacity:.08}
+.ibtop{display:flex;align-items:center;gap:14px;position:relative;z-index:1}
+.ibmono{width:46px;height:46px;border-radius:50%;background:var(--bk);color:#fff;display:flex;align-items:center;justify-content:center;font:600 16px var(--fb);letter-spacing:1px;flex:none;box-shadow:0 4px 12px -4px var(--bk)}
+.ibhead{flex:1;min-width:0}
+.ibbank{font-size:11.5px;letter-spacing:2px;text-transform:uppercase;color:var(--bk);font-weight:600}
+.ibname{font-family:var(--fh);font-size:25px;font-weight:600;line-height:1.15;margin-top:2px}
+.ibnote{font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--line);color:var(--muted);white-space:nowrap;background:var(--panel)}
+.iblabel{margin-top:18px;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.ibiban{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px 10px;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:19px;letter-spacing:1px;color:var(--text);cursor:pointer;padding:12px 14px;background:var(--panel2);border-radius:14px;border:1px dashed var(--line);transition:background .2s}
+.ibiban:hover{background:#f3e2d6}
+.ibiban.big{font-size:30px;gap:6px 16px;padding:20px}
+.ibbot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+.ibbig .ibbank{font-size:13px}
+@media(max-width:800px){.ibgrid{grid-template-columns:1fr}.ibiban{font-size:16px}.ibiban.big{font-size:22px}}
 @media(max-width:800px){.kpis{grid-template-columns:1fr}.fgrid{grid-template-columns:1fr}main{padding:16px}header{padding:12px 16px}header h1{font-size:24px}}
 </style>
 </head>
@@ -223,6 +241,7 @@ body.locked header,body.locked main,body.locked .deco{display:none}
     <button class="tab" data-view="vers">Versements</button>
     <button class="tab" data-view="annee">Année</button>
     <button class="tab" data-view="bilan">Bilan</button>
+    <button class="tab" data-view="iban">IBAN</button>
   </nav>
   <div class="spacer"></div>
   <div class="sync ok" id="sync" title="Synchronisé"><i></i><span>Synchronisé</span></div>
@@ -400,6 +419,7 @@ function render(){
   renderCompteSel();
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.view===view));
   if(view === 'synthese') return renderSynthese();
+  if(view === 'iban') return renderIban();
   if(view === 'prel' && prelScope === 'all') return renderPrel();
   if(view === 'annee' && anneeScope === 'all') return renderAnnee();
   if(view === 'bilan' && bilanScope === 'all') return renderBilan();
@@ -767,6 +787,73 @@ function renderBilan(){
     </table>
   </div>`;
   document.querySelectorAll('#segBilan button').forEach(b => b.onclick = () => { bilanScope = b.dataset.v; renderBilan(); });
+}
+
+/* ============ IBAN ============ */
+let filterIban = '';
+const BANK_COLORS = ['#c47a5a','#6b9395','#b08a3e','#8f84b5','#7a9a6a','#c98b95','#3d5f94','#a0896a'];
+const BANK_KNOWN = { 'credit agricole':'#4f8a63', 'banque populaire':'#3d5f94', 'cic':'#5f8f95', 'revolut':'#4a4a52', 'trade republic':'#8f84b5',
+  'boursorama':'#c98b95', 'boursobank':'#c98b95', 'lcl':'#b08a3e', 'societe generale':'#b9564a', 'bnp':'#4f8a63', 'caisse d epargne':'#b9564a', 'la banque postale':'#c9a06a', 'credit mutuel':'#3d5f94' };
+function bankColor(nom){ const n = String(nom||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z ]/g,' ').replace(/\s+/g,' ').trim();
+  for(const k in BANK_KNOWN) if(n.includes(k)) return BANK_KNOWN[k];
+  let h = 0; for(const ch of String(nom||'').toLowerCase()) h = (h*31 + ch.charCodeAt(0)) >>> 0; return BANK_COLORS[h % BANK_COLORS.length]; }
+const monogram = b => String(b||'?').split(/\s+/).filter(Boolean).map(w=>w[0]).join('').slice(0,2).toUpperCase();
+function ibanItems(){
+  const items = db.comptes.filter(c => c.iban).map(c => ({ key:'c:'+c.id, nom:c.nom, banque:c.banque||'', iban:c.iban, note:c.note||'', membres:membres(c) }));
+  (db.ribs||[]).filter(r => !db.comptes.some(c => ibanClean(c.iban) === ibanClean(r.iban)))
+    .forEach((r,i) => items.push({ key:'r:'+i, nom:r.nom, banque:r.banque||'', iban:r.iban, note:r.note||'', membres:[], libre:true }));
+  return items;
+}
+const coordonnees = it => `${it.nom}\n${it.banque ? it.banque + '\n' : ''}IBAN : ${ibanFmt(it.iban)}`;
+function renderIban(){
+  const q = filterIban.toLowerCase();
+  const all = ibanItems();
+  const list = all.filter(it => !q || (it.nom+' '+it.banque+' '+it.note+' '+it.iban+' '+it.membres.map(pNom).join(' ')).toLowerCase().includes(q));
+  const sans = db.comptes.filter(c => !c.iban);
+  main.innerHTML = `
+  <div class="toolbar">
+    <input id="searchIban" placeholder="Rechercher un compte, une banque, une personne…" value="${esc(filterIban)}" style="max-width:360px">
+    <div class="spacer"></div>
+    <span class="hist">${list.length} IBAN</span>
+  </div>
+  ${list.length ? `<div class="ibgrid">${list.map(it => { const col = bankColor(it.banque); return `
+    <div class="ibcard" style="--bk:${col}">
+      <div class="ibtop">
+        <div class="ibmono">${esc(monogram(it.banque))}</div>
+        <div class="ibhead"><div class="ibbank">${esc(it.banque || 'Banque')}</div><div class="ibname">${esc(it.nom)}</div></div>
+        ${it.note ? `<span class="ibnote">${esc(it.note)}</span>` : ''}
+      </div>
+      <div class="iblabel">IBAN ${ibanValide(it.iban) ? '<span class="pos">· valide ✓</span>' : '<span class="neg">· à vérifier</span>'}</div>
+      <div class="ibiban" data-copy="${ibanClean(it.iban)}" title="Cliquer pour copier">${ibanFmt(it.iban).split(' ').map(g=>`<span>${g}</span>`).join('')}</div>
+      <div class="ibbot">
+        <div class="ibwho">${it.libre ? '<span class="hist">Pas encore relié à un compte</span>' : it.membres.map(badge).join(' ')}</div>
+        <div class="row" style="gap:6px">
+          <button class="btn sm" data-big="${it.key}" title="Afficher en grand">⤢</button>
+          <button class="btn sm" data-copyall="${it.key}">Copier tout</button>
+          <button class="btn sm primary" data-copy="${ibanClean(it.iban)}">⧉ Copier l’IBAN</button>
+        </div>
+      </div>
+    </div>`; }).join('')}</div>`
+  : `<div class="card empty">${all.length ? 'Aucun IBAN ne correspond à ta recherche.' : 'Aucun IBAN enregistré. Ajoute-les dans « ✦ Gérer », ou importe ta liste de RIB avec ⤒.'}</div>`}
+  ${sans.length ? `<div class="hist" style="margin-top:18px;text-align:center">Comptes sans IBAN : ${sans.map(c=>esc(c.nom)).join(' · ')} — à compléter dans <button class="btn sm" data-act="gerer">✦ Gérer</button>.</div>` : ''}`;
+  const si = document.getElementById('searchIban');
+  si.oninput = e => { filterIban = e.target.value; renderIban(); const n = document.getElementById('searchIban'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); };
+  main.querySelectorAll('[data-copyall]').forEach(b => b.onclick = () => { const it = ibanItems().find(x => x.key === b.dataset.copyall); if(it) copier(coordonnees(it), 'Coordonnées'); });
+  main.querySelectorAll('[data-big]').forEach(b => b.onclick = () => { const it = ibanItems().find(x => x.key === b.dataset.big); if(it) ibanEnGrand(it); });
+}
+function ibanEnGrand(it){
+  dlg.innerHTML = `
+  <div class="dhead"><h2>${esc(it.nom)}</h2><button type="button" class="x" data-close>×</button></div>
+  <div class="dbody ibbig" style="--bk:${bankColor(it.banque)}">
+    <div class="ibbank">${esc(it.banque)}</div>
+    ${it.membres.length ? `<div class="hist" style="margin:4px 0 0">Titulaire(s) : ${it.membres.map(pNom).map(esc).join(' et ')}</div>` : ''}
+    <div class="iblabel" style="margin-top:22px">IBAN</div>
+    <div class="ibiban big" data-copy="${ibanClean(it.iban)}">${ibanFmt(it.iban).split(' ').map(g=>`<span>${g}</span>`).join('')}</div>
+  </div>
+  <div class="dfoot"><button type="button" class="btn" data-close>Fermer</button>
+    <div class="row"><button type="button" class="btn" id="bigAll">Copier tout</button><button type="button" class="btn primary" data-copy="${ibanClean(it.iban)}">⧉ Copier l’IBAN</button></div></div>`;
+  dlg.showModal();
+  dlg.querySelector('#bigAll').onclick = () => copier(coordonnees(it), 'Coordonnées');
 }
 
 /* ============ Synthèse (tous les comptes) ============ */
@@ -1161,7 +1248,7 @@ document.getElementById('fileImport').onchange = e => {
 };
 
 /* ============ Mise à jour automatique ============ */
-const APP_VERSION = '2026-11-24-2';
+const APP_VERSION = '2026-11-24-3';
 async function verifierMaj(){
   try{
     const r = await fetch(location.pathname + '?nc=' + Date.now(), { cache:'no-store' });
