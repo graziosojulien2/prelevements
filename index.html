@@ -401,6 +401,8 @@ function render(){
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.view===view));
   if(view === 'synthese') return renderSynthese();
   if(view === 'prel' && prelScope === 'all') return renderPrel();
+  if(view === 'annee' && anneeScope === 'all') return renderAnnee();
+  if(view === 'bilan' && bilanScope === 'all') return renderBilan();
   if(!idsCompte().length){
     main.innerHTML = `<div class="card empty">Ce compte n’a encore aucun membre.<br><button class="btn primary" style="margin-top:14px;font-style:normal" data-act="gerer">Ajouter des personnes au compte</button></div>`;
     return;
@@ -654,15 +656,29 @@ const resteCell = (d,v) => { const x = d - v;
   if(Math.abs(x) < 0.005) return d > 0 ? '<span class="pos">✓</span>' : '<span style="color:var(--muted)">—</span>';
   return x > 0 ? `<span class="neg">${eur(x)}</span>` : `<span class="pos">+${eur(-x)}</span>`; };
 
+let anneeScope = 'all';
+/* Résumé d'un mois, tous comptes additionnés */
+function resumeMoisTous(key){
+  const out = { lignes:[], du:{}, verse:{}, total:0, vers:[] };
+  db.comptes.forEach(c => { const r = resumeMois(key, c.id);
+    out.lignes.push(...r.lignes); out.vers.push(...r.vers); out.total += r.total;
+    for(const id in r.du) out.du[id] = (out.du[id]||0) + r.du[id];
+    for(const id in r.verse) out.verse[id] = (out.verse[id]||0) + r.verse[id]; });
+  return out;
+}
 function renderAnnee(){
-  const now = monthKey(new Date()), ids = idsCompte();
+  const all = anneeScope === 'all';
+  const now = monthKey(new Date());
   const rows = [], T = { tot:0, n:0, d:{}, v:{} };
-  ids.forEach(id => { T.d[id] = 0; T.v[id] = 0; });
   for(let m=1;m<=12;m++){
-    const k = curYear + '-' + String(m).padStart(2,'0'); const r = resumeMois(k);
+    const k = curYear + '-' + String(m).padStart(2,'0'); const r = all ? resumeMoisTous(k) : resumeMois(k);
     rows.push({ k, r }); T.tot += r.total; T.n += r.lignes.length;
-    ids.forEach(id => { T.d[id] += r.du[id]||0; T.v[id] += r.verse[id]||0; });
+    for(const id in r.du) T.d[id] = (T.d[id]||0) + r.du[id];
+    for(const id in r.verse) T.v[id] = (T.v[id]||0) + r.verse[id];
   }
+  // colonnes : en vue « tous les comptes », seulement les personnes concernées dans l'année
+  const ids = all ? db.personnes.map(p=>p.id).filter(id => (T.d[id]||0) > 0.004 || (T.v[id]||0) > 0.004) : idsCompte();
+  ids.forEach(id => { T.d[id] = T.d[id]||0; T.v[id] = T.v[id]||0; });
   const actifs = rows.filter(x=>x.r.total>0).length || 1, moy = T.tot/actifs, max = Math.max(...rows.map(x=>x.r.total), 1);
   main.innerHTML = `
   <div class="monthnav">
@@ -670,7 +686,13 @@ function renderAnnee(){
     <h2>${curYear}</h2>
     <button class="btn" data-act="ynext">▶</button>
     <button class="btn sm" data-act="ytoday">Cette année</button>
+    <div class="spacer"></div>
+    <div class="seg" id="segAnnee">
+      ${segBtn('compte','Ce compte',!all,'var(--amber)')}
+      ${segBtn('all','Tous les comptes',all,'var(--amber)')}
+    </div>
   </div>
+  <div class="hist" style="margin:-12px 0 16px">${all ? `Tous les comptes additionnés (${db.comptes.length})` : `Compte : <b>${esc(compte().nom)}</b>`}</div>
   <div class="kpis">
     <div class="card kpi tot"><div class="lbl">Total de l’année</div><div class="num">${eur(T.tot)}</div>
       <div class="sub"><span>Moyenne par mois</span><b>${eur(moy)}</b></div><div class="sub"><span>Prélèvements</span><b>${T.n}</b></div></div>
@@ -684,7 +706,7 @@ function renderAnnee(){
           ${ids.map(id=>`<th colspan="3" class="grp" style="color:${shade(pCol(id),.15)}">${esc(pNom(id))}</th>`).join('')}</tr>
         <tr>${ids.map(()=>`<th class="r">À payer</th><th class="r">Versé</th><th class="r">Reste</th>`).join('')}</tr>
       </thead>
-      <tbody>${rows.map(({k,r})=>`<tr class="click ${k===now?'cur':''}" data-month="${k}" title="Voir le détail du mois">
+      <tbody>${rows.map(({k,r})=>`<tr class="click ${k===now?'cur':''}" ${all ? `data-smonth="${k}"` : `data-month="${k}"`} title="Voir le détail du mois">
         <td><b style="text-transform:capitalize;display:inline-block">${new Date(curYear, Number(k.slice(5))-1, 1).toLocaleDateString('fr-FR',{month:'long'})}</b>${k===now?' <span class="st">en cours</span>':''}</td>
         <td class="r"><b>${eur(r.total)}</b>${r.total > moy*1.15 && r.total>0 ? ' <span title="Mois plus chargé que la moyenne" style="color:var(--amber2)">▲</span>' : ''}</td>
         <td style="width:90px"><div class="bar"><span style="width:${(r.total/max*100).toFixed(1)}%"></span></div></td>
@@ -692,23 +714,41 @@ function renderAnnee(){
       <tfoot><tr><td>Total ${curYear}</td><td class="r">${eur(T.tot)}</td><td></td>
         ${ids.map(id=>`<td class="r">${eur(T.d[id])}</td><td class="r">${eur(T.v[id])}</td><td class="r">${resteCell(T.d[id],T.v[id])}</td>`).join('')}</tr></tfoot>
     </table>
-    <div class="cumul" style="margin-top:10px">▲ = mois plus chargé que la moyenne · Reste en rouge = encore à verser · en vert = versé en plus · clique sur un mois pour le détail</div>
-  </div>`;
+    <div class="cumul" style="margin-top:10px">▲ = mois plus chargé que la moyenne · Reste en rouge = encore à verser · en vert = versé en plus · clique sur un mois pour le détail${all ? ' (synthèse)' : ''}</div>
+  </div>
+  ${T.tot === 0 ? `<div class="card empty" style="margin-top:14px">Aucun prélèvement en ${curYear}${all ? '' : ' sur ce compte'}. Vérifie les dates de début et de fin dans les fiches, ou passe sur ${all ? 'une autre année' : '« Tous les comptes »'}.</div>` : ''}`;
+  document.querySelectorAll('#segAnnee button').forEach(b => b.onclick = () => { anneeScope = b.dataset.v; renderAnnee(); });
 }
 
+let bilanScope = 'all';
 function renderBilan(){
-  const ids = idsCompte();
+  const all = bilanScope === 'all';
   const fin = monthKey(new Date()) > curMonth ? monthKey(new Date()) : curMonth;
   const rows = []; let k = addMonths(fin, -11);
-  const T = { tot:0, d:{}, v:{} }; ids.forEach(id => { T.d[id]=0; T.v[id]=0; });
+  const T = { tot:0, d:{}, v:{} };
   for(let i=0;i<12;i++){
-    const r = resumeMois(k); rows.push({ k, r }); T.tot += r.total;
-    ids.forEach(id => { T.d[id] += r.du[id]||0; T.v[id] += r.verse[id]||0; });
+    const r = all ? resumeMoisTous(k) : resumeMois(k); rows.push({ k, r }); T.tot += r.total;
+    for(const id in r.du) T.d[id] = (T.d[id]||0) + r.du[id];
+    for(const id in r.verse) T.v[id] = (T.v[id]||0) + r.verse[id];
     k = addMonths(k,1);
   }
+  // cumul depuis le début : additionné sur tous les comptes en vue globale
+  const c = {};
+  if(all) db.comptes.forEach(cc => { const x = cumul(fin, cc.id); for(const id in x) c[id] = (c[id]||0) + x[id]; });
+  else Object.assign(c, cumul(fin));
+  const ids = all ? db.personnes.map(p=>p.id).filter(id => (T.d[id]||0) > 0.004 || (T.v[id]||0) > 0.004 || Math.abs(c[id]||0) > 0.004) : idsCompte();
+  ids.forEach(id => { T.d[id] = T.d[id]||0; T.v[id] = T.v[id]||0; });
   const ecart = (v,d) => { const e = v-d; return Math.abs(e)<0.005 ? '<span style="color:var(--muted)">0</span>' : `<span class="${e>0?'pos':'neg'}">${e>0?'+':''}${eur(e)}</span>`; };
-  const c = cumul(fin);
   main.innerHTML = `
+  <div class="toolbar">
+    <div class="hist">${all ? `Tous les comptes additionnés (${db.comptes.length})` : `Compte : <b>${esc(compte().nom)}</b>`}</div>
+    <div class="spacer"></div>
+    <div class="seg" id="segBilan">
+      ${segBtn('compte','Ce compte',!all,'var(--amber)')}
+      ${segBtn('all','Tous les comptes',all,'var(--amber)')}
+    </div>
+  </div>
+  ${ids.length ? '' : '<div class="card empty" style="margin-bottom:16px">Rien à afficher sur les 12 derniers mois.</div>'}
   <div class="kpis">
     ${ids.map(id=>{ const v = c[id]||0; return `<div class="card kpi" style="--c:${pCol(id)}"><div class="lbl" style="color:${shade(pCol(id),.15)}">${esc(pNom(id))} · cumul depuis le début</div>
       <div class="num ${v<-0.004?'neg':'pos'}">${v>0.004?'+':''}${eur(v)}</div>
@@ -721,11 +761,12 @@ function renderBilan(){
         <tr><th rowspan="2">Mois</th><th rowspan="2" class="r">Total</th>${ids.map(id=>`<th colspan="3" class="grp" style="color:${shade(pCol(id),.15)}">${esc(pNom(id))}</th>`).join('')}</tr>
         <tr>${ids.map(()=>`<th class="r">Dû</th><th class="r">Versé</th><th class="r">Écart</th>`).join('')}</tr>
       </thead>
-      <tbody>${rows.map(({k,r})=>`<tr class="click" data-month="${k}"><td style="text-transform:capitalize">${monthLabel(k)}</td><td class="r">${eur(r.total)}</td>
+      <tbody>${rows.map(({k,r})=>`<tr class="click" ${all ? `data-smonth="${k}"` : `data-month="${k}"`}><td style="text-transform:capitalize">${monthLabel(k)}</td><td class="r">${eur(r.total)}</td>
         ${ids.map(id=>`<td class="r">${eur(r.du[id])}</td><td class="r">${eur(r.verse[id])}</td><td class="r">${ecart(r.verse[id]||0,r.du[id]||0)}</td>`).join('')}</tr>`).join('')}</tbody>
       <tfoot><tr><td>Total 12 mois</td><td class="r">${eur(T.tot)}</td>${ids.map(id=>`<td class="r">${eur(T.d[id])}</td><td class="r">${eur(T.v[id])}</td><td class="r">${ecart(T.v[id],T.d[id])}</td>`).join('')}</tr></tfoot>
     </table>
   </div>`;
+  document.querySelectorAll('#segBilan button').forEach(b => b.onclick = () => { bilanScope = b.dataset.v; renderBilan(); });
 }
 
 /* ============ Synthèse (tous les comptes) ============ */
@@ -1098,6 +1139,7 @@ main.addEventListener('click', e => {
   if(o) return openPrel(o.dataset.open);
   if(vv) return openVers(vv.dataset.vers);
   if(m){ curMonth = m.dataset.month; view = 'mois'; render(); }
+  const sm = e.target.closest('[data-smonth]'); if(sm){ curMonth = sm.dataset.smonth; view = 'synthese'; render(); }
 });
 dlg.addEventListener('click', e => { if(e.target.closest('[data-close]')) { dlg.close(); render(); } });
 document.addEventListener('click', e => { const c = e.target.closest('[data-copy]'); if(c){ e.stopPropagation(); copier(c.dataset.copy); } }, true);
@@ -1119,7 +1161,7 @@ document.getElementById('fileImport').onchange = e => {
 };
 
 /* ============ Mise à jour automatique ============ */
-const APP_VERSION = '2026-11-23-4';
+const APP_VERSION = '2026-11-24-2';
 async function verifierMaj(){
   try{
     const r = await fetch(location.pathname + '?nc=' + Date.now(), { cache:'no-store' });
